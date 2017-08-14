@@ -1,0 +1,6 @@
+[submodule "StreamingLibrary"]
+	path = StreamingLibrary
+	url = http://github.com/solarteameindhoven/STE17-MK5Streaming
+[submodule "QSTECANMessage"]
+	path = QSTECANMessage
+	url = http://github.com/solarteameindhoven/STE15-QSTECANMessage
