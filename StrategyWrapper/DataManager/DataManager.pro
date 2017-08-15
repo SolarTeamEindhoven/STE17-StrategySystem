@@ -39,10 +39,19 @@ STE_BUILD_PATH_PREFIX = $$relative_path($$OUT_PWD)
 CONFIG += link_pkgconfig
 # PKGCONFIG += libgps
 
-LIBS += \
-        -L$$PWD/$$STE_BUILD_PATH_PREFIX/../QSTECANMessage -lQSTECANMessage \
+unix {
+    LIBS += \
+        -L$$PWD/$$STE_BUILD_PATH_PREFIX/../QSTECANMessage/ -lQSTECANMessage \
         -L$$PWD/$$STE_BUILD_PATH_PREFIX/../StreamingLibrary -lStreamingLibrary
+}
+win32 {
+    LIBS += -lwsock32
+    CONFIG(release, debug|release): LIBS+=$$PWD/$$STE_BUILD_PATH_PREFIX/../QSTECANMessage/release/QSTECANMessage.dll \
+                                          $$PWD/$$STE_BUILD_PATH_PREFIX/../StreamingLibrary/release/StreamingLibrary.dll
+    CONFIG(debug, debug|release): LIBS+=$$PWD/$$STE_BUILD_PATH_PREFIX/../QSTECANMessage/debug/QSTECANMessage.dll \
+                                         $$PWD/$$STE_BUILD_PATH_PREFIX/../StreamingLibrary/debug/StreamingLibrary.dll
 
+}
 INCLUDEPATH += \
         $$PWD/../QSTECANMessage/include \
         $$PWD/../StreamingLibrary/include
