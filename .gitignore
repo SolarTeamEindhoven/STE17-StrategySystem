@@ -1,0 +1,5 @@
+# ignore all build directories
+*build*/
+
+# ignore QT instance specific project settings
+*.user
