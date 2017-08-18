@@ -1,5 +1,6 @@
 #include "client.h"
 #include "server.h"
+#include "tcpconnection.h"
 #include <QApplication>
 #include <QThread>
 
@@ -9,9 +10,7 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    QThread serverThread;
     Server server;
-    server.moveToThread(&serverThread);
 
     Client client;
     qDebug() << "Client connecting status " << client.connectToHost("localhost");

@@ -28,11 +28,15 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
     client.cpp \
-    server.cpp
+    server.cpp \
+    tcpconnection.cpp \
+    tcpmessage.cpp
 
 HEADERS += \
     client.h \
-    server.h
+    server.h \
+    tcpconnection.h \
+    tcpmessage.h
 
 STE_BUILD_PATH_PREFIX = $$relative_path($$OUT_PWD)
 
