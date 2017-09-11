@@ -4,7 +4,8 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core
+QT       -= gui
 QT       += network
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
@@ -26,13 +27,9 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 
 SOURCES += \
-        main.cpp \
-    client.cpp \
-    server.cpp
+        main.cpp
 
-HEADERS += \
-    client.h \
-    server.h
+HEADERS +=
 
 STE_BUILD_PATH_PREFIX = $$relative_path($$OUT_PWD)
 
@@ -41,20 +38,16 @@ CONFIG += link_pkgconfig
 
 unix {
     LIBS += \
-        -L$$PWD/$$STE_BUILD_PATH_PREFIX/../QSTECANMessage/ -lQSTECANMessage \
-        -L$$PWD/$$STE_BUILD_PATH_PREFIX/../StreamingLibrary -lStreamingLibrary
+        -L$$PWD/$$STE_BUILD_PATH_PREFIX/../TCPProtocol/ -TCPProtocol
 }
 win32 {
     LIBS += -lwsock32
-    CONFIG(release, debug|release): LIBS+=$$PWD/$$STE_BUILD_PATH_PREFIX/../QSTECANMessage/release/QSTECANMessage.dll \
-                                          $$PWD/$$STE_BUILD_PATH_PREFIX/../StreamingLibrary/release/StreamingLibrary.dll
-    CONFIG(debug, debug|release): LIBS+=$$PWD/$$STE_BUILD_PATH_PREFIX/../QSTECANMessage/debug/QSTECANMessage.dll \
-                                         $$PWD/$$STE_BUILD_PATH_PREFIX/../StreamingLibrary/debug/StreamingLibrary.dll
+    CONFIG(release, debug|release): LIBS+=$$PWD/$$STE_BUILD_PATH_PREFIX/../TCPProtocol/release/TCPProtocol.dll
+    CONFIG(debug, debug|release): LIBS+=$$PWD/$$STE_BUILD_PATH_PREFIX/../TCPProtocol/debug/TCPProtocol.dll
 
 }
 INCLUDEPATH += \
-        $$PWD/../QSTECANMessage/include \
-        $$PWD/../StreamingLibrary/include
+        $$PWD/../TCPProtocol \
 
 QMAKE_CXXFLAGS -= -O
 QMAKE_CXXFLAGS -= -O1
