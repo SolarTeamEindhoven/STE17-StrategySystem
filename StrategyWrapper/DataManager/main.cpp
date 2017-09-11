@@ -8,9 +8,6 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    qDebug() << "test";
     DataManager dm;
-    qDebug() << "test2";
-    dm.timerCallBack();
     return a.exec();
 }

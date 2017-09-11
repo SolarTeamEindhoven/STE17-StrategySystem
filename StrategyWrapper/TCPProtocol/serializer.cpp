@@ -4,19 +4,16 @@
 #define DISTANCE_MAIN_ID 23
 #define DISTANCE_SUB_ID 15
 
-bool Serializer::initialized = false;
-Serializer* Serializer::singleton = NULL;
-
 void Serializer::initializeIds() {
     QList<LastDataStruct> list1; //TODO autogenerate this
     list1.append(LastDataStruct(Float, true, true));
     list1.append(LastDataStruct(Float, false, false));
-    dataStruct.append(qMakePair(1,list1));
+    dataStruct.append(qMakePair(2,list1));
     lookUp[2] = 0;
 
     QList<LastDataStruct> list2;
     list2.append(LastDataStruct(Other, true, false));
     list2.append(LastDataStruct(UInt32, false, true));
-    dataStruct.append(qMakePair(4,list1));
+    dataStruct.append(qMakePair(11,list1));
     lookUp[11] = 1;
 }

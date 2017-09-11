@@ -1,7 +1,7 @@
 #include "sockethandler.h" //we need to have sockethandlers functions
 
 WriteHandler::WriteHandler(QTcpSocket* socket, DataManager* dataManager, SocketHandler* parent) :
-    socket(socket), dataManager(dataManager), parent(parent)
+    socket(socket), dataManager(dataManager), socketHandler(parent)
 {}
 
 void WriteHandler::initializeConnects() {
@@ -19,11 +19,11 @@ void WriteHandler::sendRows(quint32 id, quint32 size, QByteArray& data) {
     idUnion.value = qToLittleEndian(id);
     sizeUnion.value = qToLittleEndian(size);
 
-    parent->mutex.lock();
+    socketHandler->mutex.lock();
     socket->write(idUnion.bytes, sizeof(quint32));
     socket->write(sizeUnion.bytes, sizeof(quint32));
     socket->write(data);
-    parent->mutex.unlock();
+    socketHandler->mutex.unlock();
 }
 void WriteHandler::sendRow(quint32 id, QByteArray& data) {
     union {
@@ -32,14 +32,14 @@ void WriteHandler::sendRow(quint32 id, QByteArray& data) {
     }idUnion;
 
     idUnion.value = qToLittleEndian(id);
-    parent->mutex.lock();
+    socketHandler->mutex.lock();
     socket->write(idUnion.bytes, sizeof(quint32));
     socket->write(data);
-    parent->mutex.unlock();
+    socketHandler->mutex.unlock();
 }
 
 void WriteHandler::flush() {
-    parent->mutex.lock();
+    socketHandler->mutex.lock();
     socket->flush();
-    parent->mutex.unlock();
+    socketHandler->mutex.unlock();
 }

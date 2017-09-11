@@ -1,11 +1,11 @@
 #include "datamanager.h" //a bit of a way around, but I need the DM definition here
 
-HeaderHandler::HeaderHandler(QTcpSocket* socket, DataManager* dataManager, SocketHandler* parent) : QObject(this),
-    clientType(unclear), socket(socket), dataManager(dataManager), parent(parent), state(readType), id(0), size(0), multipleLines(false)
+HeaderHandler::HeaderHandler(QTcpSocket* socket, DataManager* dataManager, SocketHandler* parent) :
+    clientType(unclear), socket(socket), dataManager(dataManager), socketHandler(parent), state(readType), id(0), size(0), multipleLines(false)
 {}
 
-HeaderHandler::HeaderHandler(const HeaderHandler& copy) : QObject(this),
-    clientType(copy.clientType), socket(copy.socket), dataManager(copy.dataManager), parent(copy.parent),
+HeaderHandler::HeaderHandler(const HeaderHandler& copy) : QObject(copy.parent()),
+    clientType(copy.clientType), socket(copy.socket), dataManager(copy.dataManager), socketHandler(copy.socketHandler),
     state(copy.state), id(copy.id), size(copy.size), multipleLines(copy.multipleLines)
 {}
 

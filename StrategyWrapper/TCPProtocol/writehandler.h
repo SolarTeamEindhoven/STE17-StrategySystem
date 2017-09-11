@@ -8,13 +8,14 @@
 
 class TCPPROTOCOLSHARED_EXPORT WriteHandler : public QObject
 {
+    Q_OBJECT
 public:
-    WriteHandler(QTcpSocket* socket, DataManager* dataManager, SocketHandler* parent);
-    WriteHandler(const WriteHandler& handler) : QObject(this), socket(handler.socket), dataManager(handler.dataManager), parent(handler.parent) {}
+    WriteHandler(QTcpSocket* socket, DataManager* dataManager, SocketHandler* socketHandler);
+    WriteHandler(const WriteHandler& copy) : QObject(copy.parent()), socket(copy.socket), dataManager(copy.dataManager), socketHandler(copy.socketHandler) {}
     WriteHandler& operator=(const WriteHandler& other) {
         this->socket = other.socket;
         this->dataManager = other.dataManager;
-        this->parent = other.parent;
+        this->socketHandler = other.socketHandler;
         return *this;
     }
 
@@ -22,7 +23,7 @@ public:
 
     QTcpSocket* socket;
     DataManager* dataManager;
-    SocketHandler* parent;
+    SocketHandler* socketHandler;
 
 public slots:
     void sendRows(quint32 id, quint32 size, QByteArray& data);

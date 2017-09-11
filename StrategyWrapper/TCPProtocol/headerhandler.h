@@ -21,13 +21,13 @@ class TCPPROTOCOLSHARED_EXPORT HeaderHandler : public QObject
 {
      Q_OBJECT
 public:
-    HeaderHandler(QTcpSocket* socket, DataManager* dataManager, SocketHandler* parent);
+    HeaderHandler(QTcpSocket* socket, DataManager* dataManager, SocketHandler* socketHandler);
     HeaderHandler(const HeaderHandler& copy);
     HeaderHandler& operator=(const HeaderHandler& other) {
         this->clientType = other.clientType;
         this->socket = other.socket;
         this->dataManager = other.dataManager;
-        this->parent = other.parent;
+        this->socketHandler = other.socketHandler;
         return *this;
     }
     void initializeConnects();
@@ -35,7 +35,7 @@ public:
     ClientType clientType;
     QTcpSocket* socket;
     DataManager* dataManager;
-    SocketHandler* parent;
+    SocketHandler* socketHandler;
 signals:
     void newClientType(ClientType type);
 

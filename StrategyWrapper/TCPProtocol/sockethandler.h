@@ -9,15 +9,15 @@
 struct SocketHandler : public QObject {
 public:
     SocketHandler(QTcpSocket* socket, DataManager* parent)
-        : writeHandler(socket, parent, this), headerHandler(socket, parent, this), socket(socket), parent(parent)
+        : writeHandler(socket, parent, this), headerHandler(socket, parent, this), socket(socket), dataManager(parent)
     {}
 
     SocketHandler(const SocketHandler& copy)
-        : QObject(this), writeHandler(copy.writeHandler), headerHandler(copy.headerHandler), socket(copy.socket), parent(copy.parent) {}
+        : QObject(copy.parent()), writeHandler(copy.writeHandler), headerHandler(copy.headerHandler), socket(copy.socket), dataManager(copy.dataManager) {}
 
     SocketHandler& operator= (const SocketHandler& handler) {
         this->socket = handler.socket;
-        this->parent = handler.parent;
+        this->dataManager = handler.dataManager;
         this->headerHandler = handler.headerHandler;
         this->writeHandler = handler.writeHandler;
         return *this;
@@ -33,7 +33,7 @@ public:
     HeaderHandler headerHandler;
     QTcpSocket* socket;
     QMutex mutex;
-    DataManager* parent;
+    DataManager* dataManager;
 };
 
 #endif // SOCKETHANDLER_H

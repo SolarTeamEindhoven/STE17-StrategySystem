@@ -8,6 +8,7 @@
 #include <QDateTime>
 #include "sockethandler.h"
 #include "serializer.h"
+#include <QHostAddress>
 #include <QDebug>
 
 #define DATAPERIOD 100 //in ms
@@ -37,7 +38,7 @@ public slots:
 
 private:
     void setAndStartTimer();
-    Serializer* serializer;
+    Serializer serializer;
     QDateTime time;
 
     QHash<QTcpSocket*, SocketHandler> socketHash;
