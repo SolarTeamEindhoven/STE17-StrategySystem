@@ -7,6 +7,7 @@
 #include <QTimer>
 #include <QDateTime>
 #include "sockethandler.h"
+#include "dbhandler.h"
 #include "serializer.h"
 #include <QHostAddress>
 #include <QDebug>
@@ -39,6 +40,7 @@ public slots:
 private:
     void setAndStartTimer();
     Serializer serializer;
+    //DBHandler dbHandler;
     QDateTime time;
 
     QHash<QTcpSocket*, SocketHandler> socketHash;

@@ -5,6 +5,7 @@
 #include <QTcpSocket>
 #include <QtCore>
 #include <QtEndian>
+#include <QTime>
 
 class TcpClient : public QObject
 {

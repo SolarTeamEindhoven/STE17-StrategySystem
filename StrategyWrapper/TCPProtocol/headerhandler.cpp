@@ -10,6 +10,7 @@ HeaderHandler::HeaderHandler(const HeaderHandler& copy) : QObject(copy.parent())
 {}
 
 void HeaderHandler::initializeConnects() {
+    connect(this, SIGNAL(newClientType(ClientType)), dataManager, SLOT(newClientType(ClientType)));
     connect(this->socket, SIGNAL(readyRead()), SLOT(readyRead()));
 }
 
@@ -130,5 +131,7 @@ void HeaderHandler::readNextNewClient() {
                 break;
             }
         }
+        state = readType;
+        readNextType();
     } //else wait for next readyread signal
 }

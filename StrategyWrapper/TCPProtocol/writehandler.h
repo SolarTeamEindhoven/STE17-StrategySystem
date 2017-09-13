@@ -31,6 +31,7 @@ public slots:
     void flush();
 private:
     QTimer flushTimer;
+    QMutex mutex;
 };
 
 #endif // WRITEHANDLER_H

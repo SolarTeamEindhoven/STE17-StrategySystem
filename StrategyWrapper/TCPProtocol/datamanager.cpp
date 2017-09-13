@@ -5,7 +5,10 @@ DataManager::DataManager() {
     server = new QTcpServer(this);
     connect(server, SIGNAL(newConnection()), SLOT(newConnection()));
     setAndStartTimer();
-    qDebug() << "Start listing to clients on port 5000..." << server->listen(QHostAddress::SpecialAddress::Any, 5000);
+
+    qDebug() << "Start listing to clients..." << server->listen(QHostAddress::SpecialAddress::Any, 5000);
+    qDebug() << "Server IP" << server->serverAddress().toString();
+    qDebug() << "Server port" << server->serverPort();
     qDebug() << "Datamanager initialized!";
 }
 
@@ -22,7 +25,6 @@ void DataManager::setAndStartTimer() {
 
 void DataManager::newConnection() {
     while (server->hasPendingConnections()) {
-        qDebug() << "New client is connecting...";
         QTcpSocket* socket = server->nextPendingConnection();
         SocketHandler handler(socket, this);
         connect(socket, SIGNAL(disconnected()), SLOT(disconnected()));
@@ -30,6 +32,7 @@ void DataManager::newConnection() {
         socketHash.insert(socket, handler);
         socketHash.find(socket).value().initializeConnects();
         socketHashMutex.unlock();
+        qDebug() << "New client connected...";
     }
 }
 
@@ -45,10 +48,11 @@ void DataManager::disconnected() {
 void DataManager::newClientType(ClientType type) {
     HeaderHandler* hHandler = qobject_cast<HeaderHandler*>(sender());
 
-    WriteHandler* writeHandler = &hHandler->socketHandler->writeHandler;
+    socketHashMutex.lock();
+    WriteHandler* writeHandler = &socketHash.find(hHandler->socket).value().writeHandler;
+    socketHashMutex.unlock();
     //if clienttype is visualizer
     if(type == visualizer) {
-        qDebug() << "Client has identified itself as visualizer";
         //if a client is a visualizer, it needs the last data fields, permanently
         connect(this, SIGNAL(newVisData(quint32, QByteArray&)), writeHandler, SLOT(sendRow(quint32, QByteArray&)));
         connect(this, SIGNAL(newSTSData(quint32, quint32, QByteArray&)), writeHandler, SLOT(sendRows(quint32,quint32,QByteArray&)));
@@ -56,34 +60,36 @@ void DataManager::newClientType(ClientType type) {
         connect(this, SIGNAL(newParamData(quint32, QByteArray&)), writeHandler, SLOT(sendRow(quint32,QByteArray&)));
         connect(this, SIGNAL(newWFSData(quint32,quint32,QByteArray&)), writeHandler, SLOT(sendRows(quint32,quint32, QByteArray&)));
 
-        //send all current last data
+        /*//send all current last data
         QByteArray vis = serializer.getVisData();
         QPair<quint32, QByteArray> wfs = serializer.getField(2);
         QPair<quint32, QByteArray> sts = serializer.getField(4);
         QPair<quint32, QByteArray> lts = serializer.getField(5);
         QPair<quint32, QByteArray> params = serializer.getField(6);
 
-        writeHandler->sendRow(1,vis);
+
+        qDebug() << "Params gathered";
+        writeHandler->sendRow(1, vis);
         writeHandler->sendRows(2, wfs.first, wfs.second);
         writeHandler->sendRows(4, sts.first, sts.second);
         writeHandler->sendRow(5, lts.second);
-        writeHandler->sendRow(6, params.second);
+        writeHandler->sendRow(6, params.second);*/
+        qDebug() << "Client has identified itself as visualizer";
     }
     else if(type == weather) {
-        qDebug() << "Client has identified itself as WFS";
         QPair<quint32, QByteArray> sts = serializer.getField(4);
         writeHandler->sendRows(4, sts.first, sts.second);
+        qDebug() << "Client has identified itself as WFS";
     }
     else if(type == strategy) {
-        qDebug() << "Client has identified itself as strategy model";
         QPair<quint32, QByteArray> wfs = serializer.getField(2);
         QPair<quint32, QByteArray> params = serializer.getField(6);
         QByteArray strat = serializer.getStratCANData();
 
-
         writeHandler->sendRows(2, wfs.first, wfs.second);
         writeHandler->sendRow(6, params.second);
         writeHandler->sendRow(7, strat);
+        qDebug() << "Client has identified itself as strategy model";
     }
     hHandler->clientType = type;
 }
@@ -94,31 +100,39 @@ void DataManager::newField(quint32 id, quint32 dataSize, QTcpSocket* socket, boo
     //if it are non periodic canmsgs, emit them to all visualizers
     if (id < 10) {
         if (id == 2) { //emit the WFS data to all visualizers
-            qDebug() << "New WFS data emitted";
             QPair<quint32, QByteArray> wfs = serializer.getField(2);
             emit newWFSData(2, wfs.first, wfs.second);
+            qDebug() << "New WFS data emitted";
         }
         else if (id == 4) { //emit the STS data to all visualizers
-           qDebug() << "New STS data emitted";
            QPair<quint32, QByteArray> sts = serializer.getField(4);
            emit newSTSData(4, sts.first, sts.second);
+           qDebug() << "New STS data emitted";
         }
         else if (id == 5) { //emit the LTS data to all visualizers
-            qDebug() << "New LTS data emitted";
             QPair<quint32, QByteArray> lts = serializer.getField(5);
             emit newLTSData(5, lts.second);
+            qDebug() << "New LTS data emitted";
         }
         else if (id == 6) { //emit the Param data to all visualizers
-            qDebug() << "New params data emitted";
             QPair<quint32, QByteArray> params = serializer.getField(6);
             emit newParamData(6, params.second);
+            qDebug() << "New params data emitted";
         }
     }
 }
 
 void DataManager::timerCallBack() {
     if (serializer.checkNewData()) {
-        QByteArray vis = serializer.getVisData();
-        emit newVisData(1, vis);
+        union {
+            char bytes[8];
+            quint64 value;
+        } timestamp;
+        timestamp.value = qToLittleEndian(((QDateTime::currentMSecsSinceEpoch() + DATAPERIOD/2) / DATAPERIOD)*DATAPERIOD); //rounded to the next interval
+        QByteArray vis(timestamp.bytes, 8);
+        vis.append(serializer.getVisData());
+        if (vis.length() > 8) {
+            emit newVisData(1, vis);
+        }
     }
 }

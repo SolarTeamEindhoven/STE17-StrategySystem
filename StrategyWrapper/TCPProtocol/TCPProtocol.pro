@@ -29,7 +29,8 @@ SOURCES += \
     datamanager.cpp \
     serializer.cpp \
     headerhandler.cpp \
-    writehandler.cpp
+    writehandler.cpp \
+    dbhandler.cpp
 
 HEADERS += \
         tcpprotocol_global.h \  
@@ -37,9 +38,17 @@ HEADERS += \
     serializer.h \
     headerhandler.h \
     sockethandler.h \
-    writehandler.h
+    writehandler.h \
+    dbhandler.h
+
+STE_BUILD_PATH_PREFIX = $$relative_path($$OUT_PWD)
 
 unix {
     target.path = /usr/lib
+    INSTALLS += target
+}
+win32{
+    CONFIG(release, debug|release): target.path += $$PWD/$$STE_BUILD_PATH_PREFIX/../DataManager/release/
+    CONFIG(debug, debug|release): target.path += $$PWD/$$STE_BUILD_PATH_PREFIX/../DataManager/debug
     INSTALLS += target
 }

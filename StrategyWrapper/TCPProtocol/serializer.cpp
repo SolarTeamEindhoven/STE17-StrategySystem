@@ -5,15 +5,81 @@
 #define DISTANCE_SUB_ID 15
 
 void Serializer::initializeIds() {
-    QList<LastDataStruct> list1; //TODO autogenerate this
-    list1.append(LastDataStruct(Float, true, true));
-    list1.append(LastDataStruct(Float, false, false));
-    dataStruct.append(qMakePair(2,list1));
-    lookUp[2] = 0;
+    int slot = 0;
 
-    QList<LastDataStruct> list2;
-    list2.append(LastDataStruct(Other, true, false));
-    list2.append(LastDataStruct(UInt32, false, true));
-    dataStruct.append(qMakePair(11,list1));
-    lookUp[11] = 1;
+}
+
+int Serializer::loadInCSVSpec(int i, QString file) {
+    //interpret the canspec
+    QFile inputFile(file);
+    if (inputFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+       QTextStream in(&inputFile);
+       in.readLine();
+       in.readLine();
+       for (; !in.atEnd(); i++) {
+          QString line = in.readLine();
+          QStringList splitted = line.split(";");
+          quint32 id = splitted.at(0).toInt();
+          QString name = splitted.at(1);
+          QStringList fieldNames = splitted.at(2).split(",");
+          QStringList types = splitted.at(3).split(",");
+
+          QStringList toVisList=  splitted.at(13).split(","); //get the id's that
+          QStringList toStratList = splitted.at(12).split(","); //get the id's that
+          if (splitted.at(14) != "check") { //if this message should be written to the database
+              QList<LastDataStruct> list; //TODO autogenerate this
+              for (int j = 0; j < fieldNames.length(); j++) { //for each field
+                  bool toVis = false;
+                  for (int k = 0; k < toVisList.length(); k++) {
+                      toVisList[k].remove(" ");
+                      if(toVisList.at(k).toInt() == j && toVisList.at(k) != "") { //check whether it should be sent to the strat system
+                          toVis = true;
+                          break;
+                      }
+                  }
+                  bool toStrat = false;
+                  for (int k = 0; k < toStratList.length(); k++) {
+                      toStratList[k].remove(" ");
+                      if(toStratList.at(k).toInt() == j && toStratList.at(k) != "") { //check whether it should be sent to the strat system
+                          toStrat = true;
+                          break;
+                      }
+                  }
+
+                  Type type;
+                  types[j].remove(" ");
+                  QString thisType = types[j];
+                  if (thisType == "uint8_t")
+                      type = UInt8;
+                  else if (thisType == "uint16_t")
+                      type = UInt16;
+                  else if (thisType == "uint32_t")
+                      type = UInt32;
+                  else if (thisType == "uint64_t")
+                      type = UInt64;
+                  else if (thisType == "float")
+                      type = Float;
+                  else if (thisType == "Int8_t")
+                      type = Int8;
+                  else if (thisType == "Int16_t")
+                      type = Int16;
+                  else if (thisType == "Int32_t")
+                      type = Int32;
+                  else if (thisType == "Int64_t")
+                      type = Int64;
+                  else
+                      type = Other;
+
+                  name.remove(" ");
+                  fieldNames[j].remove(" ");
+                  list.append(LastDataStruct(type, toVis, toStrat, name+" "+fieldNames.at(j)));
+                  qDebug() << id << j << type << " " << toVis << " " << toStrat << " " << name+"_"+fieldNames.at(j);
+              }
+              dataStruct.append(qMakePair(id,list));
+              lookUp[id] = i;
+          }
+       }
+
+    }
+    return i;
 }

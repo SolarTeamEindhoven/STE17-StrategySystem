@@ -32,7 +32,6 @@ public:
     WriteHandler writeHandler;
     HeaderHandler headerHandler;
     QTcpSocket* socket;
-    QMutex mutex;
     DataManager* dataManager;
 };
 
