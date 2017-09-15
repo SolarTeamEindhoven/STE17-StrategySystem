@@ -26,10 +26,11 @@ public:
     SocketHandler* socketHandler;
 
 public slots:
-    void sendRows(quint32 id, quint32 size, QByteArray& data);
-    void sendRow(quint32 id, QByteArray& data);
+    void sendRows(quint32 id, bool multipleLines);
+    void sendVisData(QByteArray& data);
     void flush();
 private:
+    QByteArray collectedVisRows;
     QTimer flushTimer;
     QMutex mutex;
 };

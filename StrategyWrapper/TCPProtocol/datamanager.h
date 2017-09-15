@@ -12,24 +12,23 @@
 #include <QHostAddress>
 #include <QDebug>
 
-#define DATAPERIOD 100 //in ms
-
 class TCPPROTOCOLSHARED_EXPORT DataManager : public QObject
 {
      Q_OBJECT
 public:
     DataManager();
     void newField(quint32 id, quint32 dataSize, QTcpSocket* socket, bool multipleLines);
+    void sendField(quint32 id, QTcpSocket* socket, bool multipleLines);
 
 signals:
-    void newStratData(quint32, QByteArray&);
-    void newVisData(quint32, QByteArray&);
+    void newStratData(quint32, bool);
+    void newVisData(QByteArray& data);
     void newDBData();
 
-    void newSTSData(quint32, quint32, QByteArray&);
-    void newLTSData(quint32, QByteArray&);
-    void newWFSData(quint32, quint32, QByteArray&);
-    void newParamData(quint32, QByteArray&);
+    void newSTSData(quint32, bool);
+    void newLTSData(quint32, bool);
+    void newWFSData(quint32, bool);
+    void newParamData(quint32, bool);
 
 public slots:
     void newConnection();

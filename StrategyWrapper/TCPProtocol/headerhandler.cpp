@@ -4,10 +4,17 @@ HeaderHandler::HeaderHandler(QTcpSocket* socket, DataManager* dataManager, Socke
     clientType(unclear), socket(socket), dataManager(dataManager), socketHandler(parent), state(readType), id(0), size(0), multipleLines(false)
 {}
 
-HeaderHandler::HeaderHandler(const HeaderHandler& copy) : QObject(copy.parent()),
+HeaderHandler::HeaderHandler(const HeaderHandler& copy) : QThread(copy.parent()),
     clientType(copy.clientType), socket(copy.socket), dataManager(copy.dataManager), socketHandler(copy.socketHandler),
     state(copy.state), id(copy.id), size(copy.size), multipleLines(copy.multipleLines)
 {}
+
+HeaderHandler::~HeaderHandler() {
+    if (isRunning()) {
+        exit();
+        wait();
+    }
+}
 
 void HeaderHandler::initializeConnects() {
     connect(this, SIGNAL(newClientType(ClientType)), dataManager, SLOT(newClientType(ClientType)));
@@ -73,6 +80,7 @@ void HeaderHandler::readNextType() {
         }
         else { //id's that I expect are: 2, 4
             state = readSize;
+            multipleLines = true;
             readNextSize();
         }
     }
@@ -87,7 +95,6 @@ void HeaderHandler::readNextSize() {
         } data;
         socket->read(data.bytes, sizeof(quint32));
         size = qFromLittleEndian(data.value);
-        multipleLines = true; //in general, these messages consist of multiple lines
         state = readData;
         readNextData();
     }
@@ -134,4 +141,8 @@ void HeaderHandler::readNextNewClient() {
         state = readType;
         readNextType();
     } //else wait for next readyread signal
+}
+
+void HeaderHandler::run() {
+    exec();
 }

@@ -6,6 +6,23 @@
 
 void Serializer::initializeIds() {
     int slot = 0;
+    slot = loadInCSVSpec(slot, "strategy_overview.csv");
+    slot = loadInCSVSpec(slot, "CAN_overview.csv");
+    slot = loadInCSVSpec(slot, "combined_overview.csv");
+
+    //fill all the datafields with zeroes
+    char zero[1] = {0};
+    for(int i = 0; i < dataStruct.length(); i++) {
+        for (int j = 0; j < dataStruct.at(i).second.length(); j++) {
+            Type type = dataStruct.at(i).second.at(j).type;
+            QByteArray zeroes;
+            for(int k = 0; k < serialize[type]->getSize(); k++) { //add bytes of only zeroes, depending on the length of the type that is stored here
+                zeroes.append(zero);
+            }
+            dataStruct[i].second[j].dataSize = serialize[type]->getSize();
+            dataStruct[i].second[j].dataFields.append(zeroes);
+        }
+    }
 
 }
 
@@ -16,7 +33,7 @@ int Serializer::loadInCSVSpec(int i, QString file) {
        QTextStream in(&inputFile);
        in.readLine();
        in.readLine();
-       for (; !in.atEnd(); i++) {
+       while (!in.atEnd()) {
           QString line = in.readLine();
           QStringList splitted = line.split(";");
           quint32 id = splitted.at(0).toInt();
@@ -59,27 +76,101 @@ int Serializer::loadInCSVSpec(int i, QString file) {
                       type = UInt64;
                   else if (thisType == "float")
                       type = Float;
-                  else if (thisType == "Int8_t")
+                  else if (thisType == "int8_t")
                       type = Int8;
-                  else if (thisType == "Int16_t")
+                  else if (thisType == "int16_t")
                       type = Int16;
-                  else if (thisType == "Int32_t")
+                  else if (thisType == "int32_t")
                       type = Int32;
-                  else if (thisType == "Int64_t")
+                  else if (thisType == "int64_t")
                       type = Int64;
                   else
                       type = Other;
 
                   name.remove(" ");
                   fieldNames[j].remove(" ");
-                  list.append(LastDataStruct(type, toVis, toStrat, name+" "+fieldNames.at(j)));
-                  qDebug() << id << j << type << " " << toVis << " " << toStrat << " " << name+"_"+fieldNames.at(j);
+                  list.append(LastDataStruct(type, toVis, toStrat, name+"_"+fieldNames.at(j)));
+                  //qDebug() << id << j << type << "," << toVis << "," << toStrat << "," << name+"_"+fieldNames.at(j);
               }
               dataStruct.append(qMakePair(id,list));
-              lookUp[id] = i;
+              lookUp[id] = i; //so this id is to be found at index i of the list
+              i++; //increment for the id that is going to be written to the datastruct
           }
        }
 
     }
     return i;
+}
+
+void Serializer::showSpec() {
+    qDebug() << "Database spec:";
+    int count = 2;
+    qDebug() << "1,timestamp,5";
+    qDebug() << "2,distance,0";
+    for(int i = 10; i < dataStruct.length(); i++) {
+        for (int j = 0; j < dataStruct.at(i).second.length(); j++) {
+            count++;
+            qDebug() << count <<"," <<dataStruct.at(i).second.at(j).name<< "," << dataStruct.at(i).second.at(j).type;
+        }
+    }
+    count = 2;
+    qDebug() << " ";
+    qDebug() << "Visualizer spec:";
+    qDebug() << "1,timestamp,5";
+    qDebug() << "2,distance,0";
+    for(int i = 10; i < dataStruct.length(); i++) {
+        for (int j = 0; j < dataStruct.at(i).second.length(); j++) {
+            if (dataStruct.at(i).second.at(j).toVis) {
+                count++;
+                qDebug() << count <<"," <<dataStruct.at(i).second.at(j).name<< "," << dataStruct.at(i).second.at(j).type;
+            }
+        }
+    }
+    count = 2;
+    qDebug() << " ";
+    qDebug() << "To strategy system spec:";
+    qDebug() << "1,timestamp,5";
+    qDebug() << "2,distance,0";
+    for(int i = 10; i < dataStruct.length(); i++) {
+        for (int j = 0; j < dataStruct.at(i).second.length(); j++) {
+            if (dataStruct.at(i).second.at(j).toStrat) {
+                count++;
+                qDebug() << count <<"," <<dataStruct.at(i).second.at(j).name<< "," << dataStruct.at(i).second.at(j).type;
+            }
+        }
+    }
+
+    count = 0;
+    qDebug() << " ";
+    qDebug() << "Master forecast regels";
+    for (int j = 0; j < dataStruct.at(lookUp[2]).second.length(); j++) {
+        count++;
+        qDebug() << count <<"," <<dataStruct.at(lookUp[2]).second.at(j).name<< "," << dataStruct.at(lookUp[2]).second.at(j).type;
+    }
+
+    count = 0;
+    qDebug() << " ";
+    qDebug() << "Short term strategy regels";
+    for (int j = 0; j < dataStruct.at(lookUp[4]).second.length(); j++) {
+        count++;
+        qDebug() << count <<"," <<dataStruct.at(lookUp[4]).second.at(j).name<< "," << dataStruct.at(lookUp[4]).second.at(j).type;
+    }
+
+    count = 0;
+    qDebug() << " ";
+    qDebug() << "Long term strategy regels";
+    for (int j = 0; j < dataStruct.at(lookUp[5]).second.length(); j++) {
+        count++;
+        qDebug() << count <<"," <<dataStruct.at(lookUp[5]).second.at(j).name<< "," << dataStruct.at(lookUp[5]).second.at(j).type;
+    }
+
+    count = 0;
+    qDebug() << " ";
+    qDebug() << "Parameters";
+    for (int j = 0; j < dataStruct.at(lookUp[6]).second.length(); j++) {
+        count++;
+        qDebug() << count <<"," <<dataStruct.at(lookUp[6]).second.at(j).name<< "," << dataStruct.at(lookUp[6]).second.at(j).type;
+    }
+
+
 }

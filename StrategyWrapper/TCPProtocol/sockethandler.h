@@ -27,6 +27,7 @@ public:
     void initializeConnects() {
         writeHandler.initializeConnects();
         headerHandler.initializeConnects();
+        headerHandler.start();
     }
 
     WriteHandler writeHandler;

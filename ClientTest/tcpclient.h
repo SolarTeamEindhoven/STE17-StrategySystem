@@ -6,20 +6,27 @@
 #include <QtCore>
 #include <QtEndian>
 #include <QTime>
+#include <QTimer>
 
 class TcpClient : public QObject
 {
      Q_OBJECT
 public:
-    TcpClient();
+    TcpClient(quint32 number);
+    void setTimer();
 
 signals:
 public slots:
     void newMessage();
 
-    void write();
+    void identify(quint32 type_id);
+    void writeLargeData();
+    void timerCheckout();
 private:
+    quint32 number;
     QTcpSocket socket;
+    QTimer timer;
+    quint32 id;
 };
 
 #endif // TCPCLIENT_H

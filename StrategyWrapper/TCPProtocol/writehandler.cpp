@@ -1,37 +1,32 @@
-#include "sockethandler.h" //we need to have sockethandlers functions
+#include "datamanager.h" //we need to have sockethandlers functions
 
 WriteHandler::WriteHandler(QTcpSocket* socket, DataManager* dataManager, SocketHandler* parent) :
     socket(socket), dataManager(dataManager), socketHandler(parent)
 {}
 
 void WriteHandler::initializeConnects() {
-    flushTimer.setInterval(200); //TODO this may be changed
+    flushTimer.setInterval(500); //TODO this may be changed
     connect(&flushTimer, SIGNAL(timeout()), SLOT(flush()));
     flushTimer.start();
 }
 
-void WriteHandler::sendRows(quint32 id, quint32 size, QByteArray& data) {
-    union {
-        quint32 value;
-        char bytes[sizeof(quint32)];
-    }idUnion, sizeUnion;
-    idUnion.value = qToLittleEndian(id);
-    sizeUnion.value = qToLittleEndian(size);
-    mutex.lock();
-    socket->write(idUnion.bytes, sizeof(quint32));
-    socket->write(sizeUnion.bytes, sizeof(quint32));
-    socket->write(data);
-    mutex.unlock();
+void WriteHandler::sendVisData(QByteArray& data) {
+    if (mutex.tryLock()) {
+        if (!collectedVisRows.isEmpty()) {
+            socket->write(collectedVisRows);
+            collectedVisRows.clear();
+        }
+        socket->write(data);
+        mutex.unlock();
+    }
+    else {
+        collectedVisRows.append(data);
+    }
 }
-void WriteHandler::sendRow(quint32 id, QByteArray& data) {
-    union {
-        quint32 value;
-        char bytes[sizeof(quint32)];
-    }idUnion;
-    idUnion.value = qToLittleEndian(id);
+
+void WriteHandler::sendRows(quint32 id, bool multipleLines) {
     mutex.lock();
-    socket->write(idUnion.bytes, sizeof(quint32));
-    socket->write(data);
+    dataManager->sendField(id, socket, multipleLines);
     mutex.unlock();
 }
 

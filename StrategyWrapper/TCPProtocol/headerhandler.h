@@ -5,6 +5,7 @@
 #include <QTcpSocket>
 #include <QTEndian>
 #include "tcpprotocol_global.h"
+#include "QThread"
 
 enum ClientType {
     mk5,
@@ -17,7 +18,7 @@ enum ClientType {
 class DataManager;
 struct SocketHandler;
 
-class TCPPROTOCOLSHARED_EXPORT HeaderHandler : public QObject
+class TCPPROTOCOLSHARED_EXPORT HeaderHandler : public QThread
 {
      Q_OBJECT
 public:
@@ -30,6 +31,7 @@ public:
         this->socketHandler = other.socketHandler;
         return *this;
     }
+    virtual ~HeaderHandler();
     void initializeConnects();
 
     ClientType clientType;
@@ -43,6 +45,7 @@ public slots:
     void readyRead();
 
 private:
+    void run() override;
     enum HHState {readType, readSize, readData, readNewClient};
     HHState state;
     void readNextType();

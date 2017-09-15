@@ -1,14 +1,23 @@
 #include "dbhandler.h"
 
-DBHandler::DBHandler(QList<QPair<Type, QString>>& canSpec) :
-canSpec(canSpec) {
-    db = QSqlDatabase::addDatabase("QMySQL","Connection");
+DBHandler::DBHandler() : db(QSqlDatabase::addDatabase("QMySQL","Connection")) {
     db.setHostName("DB Handler STE");
     db.setDatabaseName("STE Strategy Database Test");
     db.setUserName("Data Manager");
     db.setPassword("beterlompdantweede");
     db.open();
-    create();
+}
+
+void DBHandler::setSpec(QList<QPair<Type, QString>>& canSpec,
+                         QList<QPair<Type, QString>>& wfsSpec,
+                         QList<QPair<Type, QString>>& stsSpec,
+                         QList<QPair<Type, QString>>& ltsSpec,
+                         QList<QPair<Type, QString>>& paramSpec) {
+    this->canSpec = canSpec;
+    this->wfsSpec = wfsSpec;
+    this->stsSpec = stsSpec;
+    this->ltsSpec = ltsSpec;
+    this->paramSpec = paramSpec;
 }
 
 void DBHandler::create() {
@@ -68,8 +77,8 @@ QString DBHandler::createFields(QList<QPair<Type, QString>>& spec) {
             createQuery.append(" INT UNSIGNED");
             break;
         case UInt64 :
-            qDebug() << "Warning, uint64 is being interpreted as int64.";
-            createQuery.append(" INT");
+            qDebug() << "Warning, uint64 is being interpreted as timestamp.";
+            createQuery.append(" TIMESTAMP");
             break;
         case Int8 :
             createQuery.append(" TINYINT");
@@ -87,7 +96,7 @@ QString DBHandler::createFields(QList<QPair<Type, QString>>& spec) {
             qDebug() << "Warning, type is not being recognized.";
             break;
         }
-        createQuery.append(" NOT NULL");
+        createQuery.append(" NOT NULL"); //TODO do I want this?
     }
     return createQuery;
 }
