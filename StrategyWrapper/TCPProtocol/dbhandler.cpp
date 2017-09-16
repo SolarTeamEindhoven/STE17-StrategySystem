@@ -1,11 +1,14 @@
 #include "dbhandler.h"
+#include <QSqlError>
 
 DBHandler::DBHandler() : db(QSqlDatabase::addDatabase("QMYSQL","Connection")) {
     db.setHostName("localhost");//("DB Handler STE");
-    db.setDatabaseName("STE Strategy Database Test");
-    db.setUserName("root");//("Data Manager");
-    db.setPassword("solarteam");//("beterlompdantweede");
-    db.open();
+    db.setPort(3306);
+    db.setDatabaseName("stestrategydatabasetest");
+    db.setUserName("DataManager");
+    db.setPassword("beterlompdantweede");
+    qInfo() << db.open();
+    qInfo() << db.lastError();
     qInfo() << db.isValid() << " <- valid | open --> " << db.isOpen();
 }
 
