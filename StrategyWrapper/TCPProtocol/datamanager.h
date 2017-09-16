@@ -39,7 +39,7 @@ public slots:
 private:
     void setAndStartTimer();
     Serializer serializer;
-    //DBHandler dbHandler;
+    DBHandler dbHandler;
     QDateTime time;
 
     QHash<QTcpSocket*, SocketHandler> socketHash;

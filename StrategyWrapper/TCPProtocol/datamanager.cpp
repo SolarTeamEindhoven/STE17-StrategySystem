@@ -9,7 +9,7 @@ DataManager::DataManager() {
     QList<QPair<Type, QString>> stsSpec = serializer.getSpec(4, 4);
     QList<QPair<Type, QString>> ltsSpec = serializer.getSpec(5, 5);
     QList<QPair<Type, QString>> paramSpec = serializer.getSpec(6, 6);
-    //dbHandler.setSpec(canSpec, wfsSpec, stsSpec, ltsSpec, paramSpec);
+    dbHandler.setSpec(canSpec, wfsSpec, stsSpec, ltsSpec, paramSpec);
 
     setAndStartTimer();
 

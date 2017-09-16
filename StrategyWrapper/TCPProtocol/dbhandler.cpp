@@ -1,11 +1,12 @@
 #include "dbhandler.h"
 
-DBHandler::DBHandler() : db(QSqlDatabase::addDatabase("QMySQL","Connection")) {
-    db.setHostName("DB Handler STE");
+DBHandler::DBHandler() : db(QSqlDatabase::addDatabase("QMYSQL","Connection")) {
+    db.setHostName("localhost");//("DB Handler STE");
     db.setDatabaseName("STE Strategy Database Test");
-    db.setUserName("Data Manager");
-    db.setPassword("beterlompdantweede");
+    db.setUserName("root");//("Data Manager");
+    db.setPassword("solarteam");//("beterlompdantweede");
     db.open();
+    qInfo() << db.isValid() << " <- valid | open --> " << db.isOpen();
 }
 
 void DBHandler::setSpec(QList<QPair<Type, QString>>& canSpec,
