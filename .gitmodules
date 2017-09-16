@@ -4,3 +4,6 @@
 [submodule "QSTECANMessage"]
 	path = StrategyWrapper/QSTECANMessage
 	url = http://github.com/solarteameindhoven/STE15-QSTECANMessage
+[submodule "CSV2CPP"]
+	path = CSV2CPP
+	url = https://github.com/SolarTeamEindhoven/STE17-CSV2CPP
