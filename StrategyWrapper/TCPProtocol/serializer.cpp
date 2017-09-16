@@ -6,7 +6,7 @@
 
 void Serializer::initializeIds() {
     int slot = 0;
-    QString pathprefix = QDir(qApp->applicationDirPath()).absoluteFilePath("../../../");
+    QString pathprefix = QDir(qApp->applicationDirPath()).absoluteFilePath("../../../CSV2CPP/");
     slot = loadInCSVSpec(slot, pathprefix.append("strategy_overview.csv"));
     slot = loadInCSVSpec(slot, pathprefix.append("CAN_overview.csv"));
     slot = loadInCSVSpec(slot, pathprefix.append("combined_overview.csv"));
