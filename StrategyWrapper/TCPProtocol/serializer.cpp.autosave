@@ -23,7 +23,7 @@ void Serializer::initializeIds() {
                 qDebug() << "Warning: size isn't initialized well";
             }
             dataStruct[i].second[j].dataSize = serialize[type]->getSize();
-            dataStruct[i].second[j].dataFields.append(zeroes);
+            dataStruct[i].second[j].dataField.append(zeroes);
         }
     }
 

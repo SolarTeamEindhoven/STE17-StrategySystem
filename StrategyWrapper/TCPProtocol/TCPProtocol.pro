@@ -30,7 +30,8 @@ SOURCES += \
     serializer.cpp \
     headerhandler.cpp \
     writehandler.cpp \
-    dbhandler.cpp
+    dbhandler.cpp \
+    vistimerthread.cpp
 
 HEADERS += \
         tcpprotocol_global.h \  
@@ -39,7 +40,8 @@ HEADERS += \
     headerhandler.h \
     sockethandler.h \
     writehandler.h \
-    dbhandler.h
+    dbhandler.h \
+    vistimerthread.h
 
 STE_BUILD_PATH_PREFIX = $$relative_path($$OUT_PWD)
 

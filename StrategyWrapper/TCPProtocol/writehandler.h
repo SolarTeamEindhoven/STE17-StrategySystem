@@ -24,15 +24,19 @@ public:
     QTcpSocket* socket;
     DataManager* dataManager;
     SocketHandler* socketHandler;
-
+signals:
+    void sendVisDataSignal();
 public slots:
-    void sendRows(quint32 id, bool multipleLines);
-    void sendVisData(QByteArray& data);
+    void sendRows(quint32 id);
+    void addVisData(QByteArray& data);
+    void sendVisDataSlot();
     void flush();
 private:
-    QByteArray collectedVisRows;
+    QMutex bufferMutex;
+    QByteArray visLinesBuffer;
+    int bufferLines;
     QTimer flushTimer;
-    QMutex mutex;
+    QMutex writeMutex;
 };
 
 #endif // WRITEHANDLER_H

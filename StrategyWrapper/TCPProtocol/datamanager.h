@@ -7,6 +7,7 @@
 #include <QTimer>
 #include <QDateTime>
 #include "sockethandler.h"
+#include "vistimerthread.h"
 #include "dbhandler.h"
 #include "serializer.h"
 #include <QHostAddress>
@@ -17,23 +18,25 @@ class TCPPROTOCOLSHARED_EXPORT DataManager : public QObject
      Q_OBJECT
 public:
     DataManager();
-    void newField(quint32 id, quint32 dataSize, QTcpSocket* socket, bool multipleLines);
-    void sendField(quint32 id, QTcpSocket* socket, bool multipleLines);
+    ~DataManager();
+    void newField(quint32 id, quint32 dataSize, QTcpSocket* socket);
+    void sendField(quint32 id, QTcpSocket* socket);
 
 signals:
-    void newStratData(quint32, bool);
+    void newStratData(quint32);
     void newVisData(QByteArray& data);
     void newDBData();
 
-    void newSTSData(quint32, bool);
-    void newLTSData(quint32, bool);
-    void newWFSData(quint32, bool);
-    void newParamData(quint32, bool);
+    void newSTSData(quint32);
+    void newLTSData(quint32);
+    void newWFSData(quint32);
+    void newParamData(quint32);
 
 public slots:
+    void removeSocket(QTcpSocket*);
     void newConnection();
     void disconnected();
-    void newClientType(ClientType type);
+    void newClientType(ClientType type, QTcpSocket* socket);
     void timerCallBack();
 
 private:
@@ -47,7 +50,8 @@ private:
 
     QMutex socketHashMutex;
     QMutex socketHandlerListMutex;
-    QTimer timer;
+    QTimer visTimer;
+    VisTimerThread visTimerThread;
 };
 
 #endif // DATAMANAGER_H

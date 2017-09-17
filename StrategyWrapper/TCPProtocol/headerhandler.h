@@ -18,7 +18,7 @@ enum ClientType {
 class DataManager;
 struct SocketHandler;
 
-class TCPPROTOCOLSHARED_EXPORT HeaderHandler : public QThread
+class TCPPROTOCOLSHARED_EXPORT HeaderHandler : public QObject
 {
      Q_OBJECT
 public:
@@ -39,13 +39,13 @@ public:
     DataManager* dataManager;
     SocketHandler* socketHandler;
 signals:
-    void newClientType(ClientType type);
+    void newClientType(ClientType, QTcpSocket*);
+    void closeSocket(QTcpSocket*);
 
 public slots:
     void readyRead();
 
 private:
-    void run() override;
     enum HHState {readType, readSize, readData, readNewClient};
     HHState state;
     void readNextType();
@@ -55,7 +55,6 @@ private:
 
     quint32 id;
     quint32 size;
-    bool multipleLines;
 
 };
 

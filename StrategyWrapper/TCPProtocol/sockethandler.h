@@ -22,18 +22,24 @@ public:
         this->writeHandler = handler.writeHandler;
         return *this;
     }
+    ~SocketHandler() {
+        if (socketThread.isRunning()) {
+            socketThread.exit();
+            socketThread.wait();
+        }
+    }
 
     //initialize connects after all those copies etc
     void initializeConnects() {
         writeHandler.initializeConnects();
         headerHandler.initializeConnects();
-        headerHandler.start();
     }
 
     WriteHandler writeHandler;
     HeaderHandler headerHandler;
     QTcpSocket* socket;
     DataManager* dataManager;
+    QThread socketThread;
 };
 
 #endif // SOCKETHANDLER_H
