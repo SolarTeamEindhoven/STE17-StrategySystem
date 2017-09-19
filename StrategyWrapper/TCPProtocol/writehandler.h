@@ -18,19 +18,25 @@ public:
         this->socketHandler = other.socketHandler;
         return *this;
     }
-
     void initializeConnects();
 
     QTcpSocket* socket;
     DataManager* dataManager;
     SocketHandler* socketHandler;
+
 signals:
     void sendVisDataSignal();
+    void sendRowsInternalSignal(quint32 id);
+
 public slots:
-    void sendRows(quint32 id);
+    void sendRowsRequest(quint32 id);
     void addVisData(QByteArray& data);
-    void sendVisDataSlot();
     void flush();
+
+private slots:
+    void sendVisDataSlot();
+    void sendRows(quint32 id);
+
 private:
     QMutex bufferMutex;
     QByteArray visLinesBuffer;

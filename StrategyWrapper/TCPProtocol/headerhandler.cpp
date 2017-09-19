@@ -33,7 +33,6 @@ void HeaderHandler::readyRead() {
 
 void HeaderHandler::readNextType() {
     if (socket->bytesAvailable() >= 4) { //check if there are enough bytes available
-
         union {
             char bytes[sizeof(quint32)];
             quint32 value;
@@ -102,7 +101,7 @@ void HeaderHandler::readNextData() {
     if (socket->bytesAvailable() >= size) { //check if there are enough bytes available
         dataManager->newField(id, size, socket);
         state = readType;
-        readNextType();
+        emit nextMessage();
     }
     //else wait for next readyread signal
 }
@@ -152,6 +151,7 @@ void HeaderHandler::readNextNewClient() {
 void HeaderHandler::initializeConnects() {
     socket->setParent(this); //move it with us to another thread
     connect(this, SIGNAL(newClientType(ClientType, QTcpSocket*)), dataManager, SLOT(newClientType(ClientType, QTcpSocket*)), Qt::DirectConnection);
+    connect(this, SIGNAL(nextMessage()), this, SLOT(readyRead()), Qt::QueuedConnection);
     connect(this->socket, SIGNAL(readyRead()), this, SLOT(readyRead()));
     connect(this, SIGNAL(closeSocket(QTcpSocket*)), dataManager, SLOT(removeSocket(QTcpSocket*)), Qt::QueuedConnection);
 }

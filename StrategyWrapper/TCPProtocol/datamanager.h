@@ -52,6 +52,8 @@ private:
     QMutex socketHandlerListMutex;
     QTimer visTimer;
     VisTimerThread visTimerThread;
+    QThread otherThread;
+    QThread mk5Thread;
 };
 
 #endif // DATAMANAGER_H

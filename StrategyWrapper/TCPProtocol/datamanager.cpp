@@ -10,7 +10,10 @@ DataManager::DataManager() : visTimerThread(&visTimer) {
     QList<QPair<Type, QString>> ltsSpec = serializer.getSpec(5, 5);
     QList<QPair<Type, QString>> paramSpec = serializer.getSpec(6, 6);
     //dbHandler.setSpec(canSpec, wfsSpec, stsSpec, ltsSpec, paramSpec);
-
+    otherThread.start();
+    otherThread.setPriority(QThread::IdlePriority);
+    mk5Thread.start();
+    mk5Thread.setPriority(QThread::TimeCriticalPriority);
     setAndStartTimer();
 
     qDebug() << "Start listing to clients..." << server->listen(QHostAddress::SpecialAddress::Any, 5000);
@@ -40,14 +43,10 @@ void DataManager::newConnection() {
         socketHashMutex.lock();
         socketHash.insert(socket, handler);
         socketHash.find(socket).value().initializeConnects();
-
-        socketHash.find(socket).value().headerHandler.moveToThread(&socketHash.find(socket).value().socketThread);
-        socketHash.find(socket).value().writeHandler.moveToThread(&socketHash.find(socket).value().socketThread);
-        socketHash.find(socket).value().socketThread.start();
-        socketHash.find(socket).value().socketThread.setPriority(QThread::IdlePriority);
+        //first assume it's an mk5
+        socketHash.find(socket).value().headerHandler.moveToThread(&mk5Thread);
+        socketHash.find(socket).value().writeHandler.moveToThread(&mk5Thread);
         socketHashMutex.unlock();
-        qDebug() << QThread::currentThreadId();
-
         qDebug() << "New client connected... IP:"
                  << socket->peerAddress().toString() << ", port :" << socket->peerPort();
     }
@@ -61,41 +60,58 @@ void DataManager::disconnected() {
 
 void DataManager::removeSocket(QTcpSocket* socket) {
     socketHashMutex.lock();
+
+    //disconnect everything
+    socketHash.find(socket).value().writeHandler.socket->disconnect();
+    socketHash.find(socket).value().headerHandler.disconnect();
+    socketHash.find(socket).value().writeHandler.disconnect();
+    socketHashMutex.unlock();
+
+    //wait 5 seconds for the object to finish all its current tasks, else you're gonna get weird exceptions
+    QTime dieTime = QTime::currentTime().addMSecs( 5000 );
+    while( QTime::currentTime() < dieTime )
+    {
+        QCoreApplication::processEvents( QEventLoop::AllEvents, 100 );
+    }
+    socketHashMutex.lock();
     socketHash.remove(socket);
     socketHashMutex.unlock();
 }
 
 void DataManager::newClientType(ClientType type, QTcpSocket* socket) {
-     qDebug() << "Emitting new client type" << QThread::currentThreadId();
+    qDebug() << "Emitting new client type" << QThread::currentThreadId();
     socketHashMutex.lock();
+    //now it's no mk5, move it to a lower prio thread
+    socketHash.find(socket).value().headerHandler.moveToThread(&otherThread);
+    socketHash.find(socket).value().writeHandler.moveToThread(&otherThread);
     WriteHandler* writeHandler = &socketHash.find(socket).value().writeHandler;
     socketHashMutex.unlock();
     //if clienttype is visualizer
     if(type == visualizer) {
         //if a client is a visualizer, it needs the last data fields, permanently
         connect(this, SIGNAL(newVisData(QByteArray&)), writeHandler, SLOT(addVisData(QByteArray&)), Qt::DirectConnection);
-        connect(this, SIGNAL(newSTSData(quint32)), writeHandler, SLOT(sendRows(quint32)), Qt::QueuedConnection);
-        connect(this, SIGNAL(newLTSData(quint32)), writeHandler, SLOT(sendRows(quint32)), Qt::QueuedConnection);
-        connect(this, SIGNAL(newParamData(quint32)), writeHandler, SLOT(sendRows(quint32)), Qt::QueuedConnection);
-        connect(this, SIGNAL(newWFSData(quint32)), writeHandler, SLOT(sendRows(quint32)), Qt::QueuedConnection);
+        connect(this, SIGNAL(newSTSData(quint32)), writeHandler, SLOT(sendRowsRequest(quint32)));
+        connect(this, SIGNAL(newLTSData(quint32)), writeHandler, SLOT(sendRowsRequest(quint32)));
+        connect(this, SIGNAL(newParamData(quint32)), writeHandler, SLOT(sendRowsRequest(quint32)));
+        connect(this, SIGNAL(newWFSData(quint32)), writeHandler, SLOT(sendRowsRequest(quint32)));
 
         QByteArray visData = serializer.sendVisData();
-        writeHandler->addVisData(visData);
-        writeHandler->sendRows(2);
-        writeHandler->sendRows(4);
-        writeHandler->sendRows(5);
-        writeHandler->sendRows(6);
+        //writeHandler->addVisData(visData);
+        writeHandler->sendRowsRequest(2);
+        writeHandler->sendRowsRequest(4);
+        writeHandler->sendRowsRequest(5);
+        writeHandler->sendRowsRequest(6);
         qDebug() << "Client has identified itself as visualizer. IP:"
                  << socket->peerAddress().toString()  << ", port :" << socket->peerPort();
     }
     else if(type == weather) {
-        writeHandler->sendRows(4);
+        writeHandler->sendRowsRequest(4);
         qDebug() << "Client has identified itself as WFS";
     }
     else if(type == strategy) {
-        writeHandler->sendRows(2);
-        writeHandler->sendRows(6);
-        writeHandler->sendRows(7);
+        writeHandler->sendRowsRequest(2);
+        writeHandler->sendRowsRequest(6);
+        writeHandler->sendRowsRequest(7);
         qDebug() << "Client has identified itself as strategy model";
     }
     socketHash.find(socket).value().headerHandler.clientType = type;
@@ -130,23 +146,10 @@ void DataManager::sendField(quint32 id, QTcpSocket* socket) {
 }
 
 void DataManager::timerCallBack() {
+    //qDebug() << "Timer call";
     if (serializer.checkNewData()) {
-        union {
-            char bytes[4];
-            quint32 value;
-        } id;
-        union {
-            char bytes[8];
-            quint64 value;
-        } timestamp;
-        //qDebug() << "going to send vis message";
-        id.value = qToLittleEndian(1);
-        timestamp.value = qToLittleEndian(((QDateTime::currentMSecsSinceEpoch() + DATAPERIOD/2) / DATAPERIOD)*DATAPERIOD); //rounded to the next interval
-
-        QByteArray data(id.bytes);
-        data.append(timestamp.bytes);
-        data.append(serializer.sendVisData());
         //qDebug() << "Sending vis message";
+        QByteArray data = serializer.sendVisData();
         emit newVisData(data);
     }
 }

@@ -1,11 +1,12 @@
 #include "tcpclient.h"
 
-TcpClient::TcpClient(quint32 number) : number(number), id(21)
+TcpClient::TcpClient(quint32 number) : number(number), id(21), size(0), type_id(0), readingType(true)
 {
     qDebug() << "client "<< number << "Connecting...";
     connect(&socket, SIGNAL(readyRead()), SLOT(newMessage()));
-    QHostAddress address("192.168.1.128");
-    socket.connectToHost(address,5000);
+    //QHostAddress address("192.168.1.128");
+    socket.setParent(this);
+    socket.connectToHost(QHostAddress::SpecialAddress::LocalHost,5000);
     if(!socket.waitForConnected()) {
         qDebug() << socket.error();
     }
@@ -45,7 +46,67 @@ void TcpClient::identify(quint32 type_id) {
 }
 
 void TcpClient::newMessage() {
-    qDebug() << "client "<< number <<  "New Message arrived" << socket.bytesAvailable() << "bytes";
+    while(1) {
+        if (readingType) {
+            if (socket.bytesAvailable() >= 8) {
+                union{
+                    char bytes[sizeof(quint32)];
+                    quint32 value;
+                }id1, size2;
+                socket.read(id1.bytes,4);
+                id1.value = qFromLittleEndian(id1.value);
+                if (id1.value == 1) {
+                    union{
+                        char bytes[sizeof(quint64)];
+                        quint64 value;
+                    } timestamp;
+                    socket.read(timestamp.bytes,8);
+                    timestamp.value = qFromLittleEndian(timestamp.value);
+                    qDebug() << "New vismessage found" << timestamp.value;
+                    size = 262;
+                    readingType = false;
+                }
+                else if (id1.value == 2 || id1.value == 4) {
+                    if (id1.value == 2) {
+                        qDebug() << "New WFS message found";
+                    }
+                    else {
+                        qDebug() << "New STS message found";
+                    }
+                    socket.read(size2.bytes,4);
+                    size = qFromLittleEndian(size2.value);
+                    readingType = false;
+                }
+                else if (id1.value == 5) {
+                    qDebug() << "New LTS found";
+                    size = 15;
+                    readingType = false;
+                }
+                else if (id1.value == 6) {
+                    qDebug() << "New params found";
+                    size = 136;
+                    readingType = false;
+                }
+                else {
+                    qDebug() << id1.value << "Hellup";
+                }
+
+            }
+            else {
+                return;
+            }
+        }
+        else {
+            if (socket.bytesAvailable() >= size) {
+                QByteArray array = socket.read(size);
+                readingType = true;
+                qDebug() << "read " << size << "bytes";
+            }
+            else {
+                return;
+            }
+        }
+    }
 }
 
 void TcpClient::writeLargeData() {
@@ -59,7 +120,7 @@ void TcpClient::writeLargeData() {
         quint32 value;
     }id1, id, useless, size;
 
-    int numberOfRows = 8*36*29*1024/8;
+    int numberOfRows = (8*36*29*1024)/8;
     quint32 sizenumber = numberOfRows*8;
     quint32 idnumber = 2;
     size.value = qToLittleEndian(sizenumber);
@@ -70,15 +131,15 @@ void TcpClient::writeLargeData() {
         float2.value = 4.3 + i;
         float1.value = qToLittleEndian(float1.value);
         float2.value = qToLittleEndian(float2.value);
-        array.append(float1.bytes);
-        array.append(float2.bytes);
+        array.append(float1.bytes, sizeof(float));
+        array.append(float2.bytes, sizeof(float));
     }
-    qDebug() << "client "<< number << "Sending big message";
+    qDebug() << array.length();
     socket.write(id.bytes,4);
     socket.write(size.bytes,4);
     socket.write(array);
     socket.flush();
-    qDebug() << "client "<< number << "Sent big message";
+    qDebug() << "client "<< number << "Sent big message MAKE THIS STRING LONGER SO IT STANDS OUT OF OTHER MESSAGES";
     QTime dieTime = QTime::currentTime().addMSecs( 5000 );
     while( QTime::currentTime() < dieTime )
     {
@@ -92,26 +153,36 @@ void TcpClient::timerCheckout() {
         quint32 value;
     }id1, id, useless, size;
 
-    for (int j = 0; j < 15; j++) {
+    for (quint32 j = 0; j < 130; j++) {
+        if (this->id >= 2030) {
+            this->id = 21;
+        }
+        union {
+            char bytes[sizeof(quint32)];
+            quint32 value;
+        } pi;
         id1.value = qToLittleEndian(this->id);
-        useless.value = 0;
+        pi.value = qToLittleEndian<quint32>(4294967295);
         socket.write(id1.bytes,4);
-        socket.write(useless.bytes,4);
-        socket.write(useless.bytes,4);
-        socket.write(useless.bytes,4);
-        socket.write(useless.bytes,4);
+        socket.write(pi.bytes,4);
+        socket.write(pi.bytes,4);
+        socket.write(pi.bytes,4);
+        socket.write(pi.bytes,4);
+        //socket.flush();
         this->id++;
     }
-    //socket.flush();
-    if (this->id >= 2030) {
-        this->id = 21;
-    }
-    qDebug() << "Sent 15 messages";
+    //qDebug() << "Sent 15 messages";
 
 }
 
+void TcpClient::setTimer2() {
+    timer2.setInterval(20000); //TODO this may be changed
+    connect(&timer2, SIGNAL(timeout()), SLOT(writeLargeData()));
+    timer2.start();
+}
+
 void TcpClient::setTimer() {
-    timer.setInterval(1); //TODO this may be changed
+    timer.setInterval(15); //TODO this may be changed
     connect(&timer, SIGNAL(timeout()), SLOT(timerCheckout()));
     timer.start();
 }

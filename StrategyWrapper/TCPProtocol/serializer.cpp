@@ -23,10 +23,33 @@ void Serializer::initializeIds() {
                 qDebug() << "Warning: size isn't initialized well";
             }
             dataStruct[i].second[j].dataSize = serialize[type]->getSize();
-            dataStruct[i].second[j].dataFields.append(zeroes);
+            dataStruct[i].second[j].dataField = zeroes;
         }
     }
+    restructureDatastructForDatablocks(2);
+    restructureDatastructForDatablocks(4);
+    restructureDatastructForDatablocks(5);
+    restructureDatastructForDatablocks(6);
+}
 
+void Serializer::restructureDatastructForDatablocks(int id) {
+    int length = 0;
+    for(int i = 0; i < dataStruct.at(lookUp[id]).second.length(); i++) {
+        length += serialize[dataStruct.at(lookUp[id]).second.at(i).type]->getSize();
+    }
+    dataStruct[lookUp[id]].second[0].dataSize = length;
+    dataStruct[lookUp[id]].second[0].dataField.clear();
+    QByteArray zeroes;
+    char zero[1] = { 0 };
+    for(int k = 0; k < length; k++) { //add bytes of only zeroes, depending on the length of the type that is stored here
+        zeroes.append(zero,1);
+    }
+    qDebug() << "Lengths " << id << length;
+    dataStruct[lookUp[id]].second[0].dataField = zeroes;
+    for (int i = 1; i < dataStruct[lookUp[id]].second.length(); i++) {
+        dataStruct[lookUp[id]].second[i].dataSize = 0;
+        dataStruct[lookUp[id]].second[i].dataField.clear();
+    }
 }
 
 int Serializer::loadInCSVSpec(int i, QString file) {
@@ -117,6 +140,7 @@ void Serializer::showSpec() {
         }
     }
     count = 2;
+    int lengthCount = 12;
     qDebug() << " ";
     qDebug() << "Visualizer spec:";
     qDebug() << "1,timestamp,5";
@@ -125,10 +149,14 @@ void Serializer::showSpec() {
         for (int j = 0; j < dataStruct.at(i).second.length(); j++) {
             if (dataStruct.at(i).second.at(j).toVis) {
                 count++;
+                lengthCount += serialize[dataStruct.at(i).second.at(j).type]->getSize();
                 qDebug() << count <<"," <<dataStruct.at(i).second.at(j).name<< "," << dataStruct.at(i).second.at(j).type;
             }
         }
     }
+    //qDebug() << "length" << lengthCount;
+    visMsgLength = lengthCount;
+    lengthCount = 12;
     count = 2;
     qDebug() << " ";
     qDebug() << "To strategy system spec:";
@@ -138,8 +166,43 @@ void Serializer::showSpec() {
         for (int j = 0; j < dataStruct.at(i).second.length(); j++) {
             if (dataStruct.at(i).second.at(j).toStrat) {
                 count++;
+                lengthCount += serialize[dataStruct.at(i).second.at(j).type]->getSize();
                 qDebug() << count <<"," <<dataStruct.at(i).second.at(j).name<< "," << dataStruct.at(i).second.at(j).type;
             }
         }
+    }
+    //qDebug() << "length" << lengthCount;
+    stratMsgLength = lengthCount;
+
+    count = 0;
+    qDebug() << " ";
+    qDebug() << "Master forecast regels";
+    for (int j = 0; j < dataStruct.at(lookUp[2]).second.length(); j++) {
+        count++;
+        qDebug() << count <<"," <<dataStruct.at(lookUp[2]).second.at(j).name<< "," << dataStruct.at(lookUp[2]).second.at(j).type;
+    }
+
+    count = 0;
+    qDebug() << " ";
+    qDebug() << "Short term strategy regels";
+    for (int j = 0; j < dataStruct.at(lookUp[4]).second.length(); j++) {
+        count++;
+        qDebug() << count <<"," <<dataStruct.at(lookUp[4]).second.at(j).name<< "," << dataStruct.at(lookUp[4]).second.at(j).type;
+    }
+
+    count = 0;
+    qDebug() << " ";
+    qDebug() << "Long term strategy regels";
+    for (int j = 0; j < dataStruct.at(lookUp[5]).second.length(); j++) {
+        count++;
+        qDebug() << count <<"," <<dataStruct.at(lookUp[5]).second.at(j).name<< "," << dataStruct.at(lookUp[5]).second.at(j).type;
+    }
+
+    count = 0;
+    qDebug() << " ";
+    qDebug() << "Parameters";
+    for (int j = 0; j < dataStruct.at(lookUp[6]).second.length(); j++) {
+        count++;
+        qDebug() << count <<"," <<dataStruct.at(lookUp[6]).second.at(j).name<< "," << dataStruct.at(lookUp[6]).second.at(j).type;
     }
 }

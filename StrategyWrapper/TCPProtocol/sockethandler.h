@@ -23,10 +23,6 @@ public:
         return *this;
     }
     ~SocketHandler() {
-        if (socketThread.isRunning()) {
-            socketThread.exit();
-            socketThread.wait();
-        }
     }
 
     //initialize connects after all those copies etc
@@ -39,7 +35,6 @@ public:
     HeaderHandler headerHandler;
     QTcpSocket* socket;
     DataManager* dataManager;
-    QThread socketThread;
 };
 
 #endif // SOCKETHANDLER_H

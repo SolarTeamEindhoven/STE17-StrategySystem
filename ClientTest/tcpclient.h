@@ -14,6 +14,7 @@ class TcpClient : public QObject
 public:
     TcpClient(quint32 number);
     void setTimer();
+    void setTimer2();
 
 signals:
 public slots:
@@ -26,7 +27,11 @@ private:
     quint32 number;
     QTcpSocket socket;
     QTimer timer;
+    QTimer timer2;
     quint32 id;
+    quint32 size;
+    quint32 type_id;
+    bool readingType;
 };
 
 #endif // TCPCLIENT_H

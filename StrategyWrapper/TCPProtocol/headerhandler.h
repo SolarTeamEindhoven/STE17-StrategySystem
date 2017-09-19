@@ -2,6 +2,7 @@
 #define READHANDLER_H
 
 #include <QtCore>
+#include <QDebug>
 #include <QTcpSocket>
 #include <QTEndian>
 #include "tcpprotocol_global.h"
@@ -41,6 +42,7 @@ public:
 signals:
     void newClientType(ClientType, QTcpSocket*);
     void closeSocket(QTcpSocket*);
+    void nextMessage();
 
 public slots:
     void readyRead();
