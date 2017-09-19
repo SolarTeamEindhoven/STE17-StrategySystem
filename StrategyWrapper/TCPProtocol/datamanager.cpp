@@ -9,11 +9,14 @@ DataManager::DataManager() : visTimerThread(&visTimer) {
     QList<QPair<Type, QString>> stsSpec = serializer.getSpec(4, 4);
     QList<QPair<Type, QString>> ltsSpec = serializer.getSpec(5, 5);
     QList<QPair<Type, QString>> paramSpec = serializer.getSpec(6, 6);
-    //dbHandler.setSpec(canSpec, wfsSpec, stsSpec, ltsSpec, paramSpec);
+
     otherThread.start();
     otherThread.setPriority(QThread::IdlePriority);
     mk5Thread.start();
     mk5Thread.setPriority(QThread::TimeCriticalPriority);
+
+    dbHandler.setSpec(canSpec, wfsSpec, stsSpec, ltsSpec, paramSpec);
+
     setAndStartTimer();
 
     qDebug() << "Start listing to clients..." << server->listen(QHostAddress::SpecialAddress::Any, 5000);

@@ -6,9 +6,10 @@
 
 void Serializer::initializeIds() {
     int slot = 0;
-    slot = loadInCSVSpec(slot, "strategy_overview.csv");
-    slot = loadInCSVSpec(slot, "CAN_overview.csv");
-    slot = loadInCSVSpec(slot, "combined_overview.csv");
+    QString pathprefix = QDir(qApp->applicationDirPath()).absoluteFilePath("../../../CSV2CPP/");
+    slot = loadInCSVSpec(slot, pathprefix.append("strategy_overview.csv"));
+    slot = loadInCSVSpec(slot, pathprefix.append("CAN_overview.csv"));
+    slot = loadInCSVSpec(slot, pathprefix.append("combined_overview.csv"));
 
     //fill all the datafields with zeroes
     char zero[1] = {0};

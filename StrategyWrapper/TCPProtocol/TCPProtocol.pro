@@ -45,10 +45,6 @@ HEADERS += \
 
 STE_BUILD_PATH_PREFIX = $$relative_path($$OUT_PWD)
 
-INCLUDEPATH+="C:\Program Files\MySQL\include"
-
-LIBS+="C:\Program Files\MySQL\MySQL Server 5.7\lib\libmysql.lib"
-
 unix {
     target.path = /usr/lib
     INSTALLS += target

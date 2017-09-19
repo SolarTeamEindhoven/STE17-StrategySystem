@@ -1,11 +1,15 @@
 #include "dbhandler.h"
+#include <QSqlError>
 
-DBHandler::DBHandler() : db(QSqlDatabase::addDatabase("QMySQL","Connection")) {
-    db.setHostName("DB Handler STE");
-    db.setDatabaseName("STE Strategy Database Test");
-    db.setUserName("Data Manager");
+DBHandler::DBHandler() : db(QSqlDatabase::addDatabase("QMYSQL","Connection")) {
+    db.setHostName("localhost");//("DB Handler STE");
+    db.setPort(3306);
+    db.setDatabaseName("stestrategydatabasetest");
+    db.setUserName("DataManager");
     db.setPassword("beterlompdantweede");
-    db.open();
+    qInfo() << db.open();
+    qInfo() << db.lastError();
+    qInfo() << db.isValid() << " <- valid | open --> " << db.isOpen();
 }
 
 void DBHandler::setSpec(QList<QPair<Type, QString>>& canSpec,
