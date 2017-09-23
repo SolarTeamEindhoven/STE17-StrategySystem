@@ -7,12 +7,12 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
-    QThread mk5thread;
-    mk5thread.start();
-    TcpClient mk5(1);
-    mk5.moveToThread(&mk5thread);
+    //QThread mk5thread;
+    //mk5thread.start();
+    //TcpClient mk5(1);
+    //mk5.moveToThread(&mk5thread);
 
-    TcpClient wfs(2);
+    //TcpClient wfs(2);
 
     TcpClient vis(3);
     vis.identify(1);

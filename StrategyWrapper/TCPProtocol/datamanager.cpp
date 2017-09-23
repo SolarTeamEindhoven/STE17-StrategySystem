@@ -60,17 +60,16 @@ void DataManager::removeSocket(QTcpSocket* socket) {
     socketHash.find(socket).value().writeHandler.socket->disconnect();
     socketHash.find(socket).value().readHandler.disconnect();
     socketHash.find(socket).value().writeHandler.disconnect();
-    socketHashMutex.unlock();
-
+    socketHash.find(socket).value().writeHandler.disconnect();
+    disconnect(this, 0, &socketHash.find(socket).value().writeHandler, 0);
     //wait 5 seconds for the object to finish all its current tasks, else you're gonna get weird exceptions
-    QTime dieTime = QTime::currentTime().addMSecs( 5000 );
+    /*QTime dieTime = QTime::currentTime().addMSecs( 5000 );
     while( QTime::currentTime() < dieTime ) {
         QCoreApplication::processEvents( QEventLoop::AllEvents, 100 );
-    }
-    socketHashMutex.lock();
-    socketHash.remove(socket);
+    }*/
     socketHashMutex.unlock();
 }
+
 
 void DataManager::newClientType(ClientType type, QTcpSocket* socket) {
     qDebug() << "Emitting new client type" << QThread::currentThreadId();

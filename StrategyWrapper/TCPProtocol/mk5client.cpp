@@ -6,10 +6,8 @@ MK5Client::MK5Client(DataManager* dm) : socket(), handler(&socket, dm)
     socket.moveToThread(this); //don't know whether this is needed
     handler.moveToThread(this);
     handler.writeHandler.moveToThread(this);
+    handler.writeHandler.flushTimer.moveToThread(this);
     handler.readHandler.moveToThread(this);
-
-
-
     start();
     setPriority(QThread::TimeCriticalPriority);
     qDebug() << "Mk5 found";

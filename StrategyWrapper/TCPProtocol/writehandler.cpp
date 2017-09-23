@@ -5,6 +5,7 @@ WriteHandler::WriteHandler(QTcpSocket* socket, DataManager* dataManager, SocketH
 {}
 
 void WriteHandler::initializeConnects() {
+    flushTimer.moveToThread(this->thread());
     flushTimer.setInterval(500); //TODO this may be changed
     connect(&flushTimer, SIGNAL(timeout()), SLOT(flush()),Qt::DirectConnection);
     connect(this, SIGNAL(sendRowsInternalSignal(quint32)), this, SLOT(sendRows(quint32)), Qt::QueuedConnection);

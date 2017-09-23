@@ -23,6 +23,7 @@ public:
     QTcpSocket* socket;
     DataManager* dataManager;
     SocketHandler* socketHandler;
+    QTimer flushTimer;
 
 signals:
     void sendVisDataSignal();
@@ -41,7 +42,6 @@ private:
     QMutex bufferMutex;
     QByteArray visLinesBuffer;
     int bufferLines;
-    QTimer flushTimer;
     QMutex writeMutex;
 };
 
