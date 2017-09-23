@@ -1,6 +1,6 @@
 #include "datamanager.h"
 
-DataManager::DataManager() : visTimerThread(&visTimer) {
+DataManager::DataManager() : visTimerThread(&visTimer), mk5(this) {
     qDebug() << "Initializing datamanager...";
     server = new QTcpServer(this);
     connect(server, SIGNAL(newConnection()), SLOT(newConnection()));
@@ -10,13 +10,8 @@ DataManager::DataManager() : visTimerThread(&visTimer) {
     QList<QPair<Type, QString>> ltsSpec = serializer.getSpec(5, 5);
     QList<QPair<Type, QString>> paramSpec = serializer.getSpec(6, 6);
 
-    otherThread.start();
-    otherThread.setPriority(QThread::IdlePriority);
-    mk5Thread.start();
-    mk5Thread.setPriority(QThread::TimeCriticalPriority);
-
-    dbHandler.setSpec(canSpec, wfsSpec, stsSpec, ltsSpec, paramSpec);
-
+    qDebug() << "Main " << QThread::currentThread();
+    //dbHandler.setSpec(canSpec, wfsSpec, stsSpec, ltsSpec, paramSpec);
     setAndStartTimer();
 
     qDebug() << "Start listing to clients..." << server->listen(QHostAddress::SpecialAddress::Any, 5000);
@@ -47,8 +42,6 @@ void DataManager::newConnection() {
         socketHash.insert(socket, handler);
         socketHash.find(socket).value().initializeConnects();
         //first assume it's an mk5
-        socketHash.find(socket).value().headerHandler.moveToThread(&mk5Thread);
-        socketHash.find(socket).value().writeHandler.moveToThread(&mk5Thread);
         socketHashMutex.unlock();
         qDebug() << "New client connected... IP:"
                  << socket->peerAddress().toString() << ", port :" << socket->peerPort();
@@ -63,17 +56,15 @@ void DataManager::disconnected() {
 
 void DataManager::removeSocket(QTcpSocket* socket) {
     socketHashMutex.lock();
-
     //disconnect everything
     socketHash.find(socket).value().writeHandler.socket->disconnect();
-    socketHash.find(socket).value().headerHandler.disconnect();
+    socketHash.find(socket).value().readHandler.disconnect();
     socketHash.find(socket).value().writeHandler.disconnect();
     socketHashMutex.unlock();
 
     //wait 5 seconds for the object to finish all its current tasks, else you're gonna get weird exceptions
     QTime dieTime = QTime::currentTime().addMSecs( 5000 );
-    while( QTime::currentTime() < dieTime )
-    {
+    while( QTime::currentTime() < dieTime ) {
         QCoreApplication::processEvents( QEventLoop::AllEvents, 100 );
     }
     socketHashMutex.lock();
@@ -84,9 +75,6 @@ void DataManager::removeSocket(QTcpSocket* socket) {
 void DataManager::newClientType(ClientType type, QTcpSocket* socket) {
     qDebug() << "Emitting new client type" << QThread::currentThreadId();
     socketHashMutex.lock();
-    //now it's no mk5, move it to a lower prio thread
-    socketHash.find(socket).value().headerHandler.moveToThread(&otherThread);
-    socketHash.find(socket).value().writeHandler.moveToThread(&otherThread);
     WriteHandler* writeHandler = &socketHash.find(socket).value().writeHandler;
     socketHashMutex.unlock();
     //if clienttype is visualizer
@@ -117,7 +105,7 @@ void DataManager::newClientType(ClientType type, QTcpSocket* socket) {
         writeHandler->sendRowsRequest(7);
         qDebug() << "Client has identified itself as strategy model";
     }
-    socketHash.find(socket).value().headerHandler.clientType = type;
+    socketHash.find(socket).value().readHandler.clientType = type;
 }
 
 void DataManager::newField(quint32 id, quint32 dataSize, QTcpSocket* socket) {

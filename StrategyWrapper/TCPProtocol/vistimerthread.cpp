@@ -8,6 +8,8 @@ VisTimerThread::VisTimerThread(QTimer *timer) : timer(timer)
 VisTimerThread::~VisTimerThread() {}
 
 void VisTimerThread::run() {
+    //timer->moveToThread(this);
+    qDebug() << "Start timer";
     timer->start();
     //I want sending the rows to be of top priority above writing large data blocks,
     //else the timer callbacks and sending is going to stagnate.

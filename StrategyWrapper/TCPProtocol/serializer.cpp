@@ -7,9 +7,9 @@
 void Serializer::initializeIds() {
     int slot = 0;
     QString pathprefix = QDir(qApp->applicationDirPath()).absoluteFilePath("../../../CSV2CPP/");
-    slot = loadInCSVSpec(slot, pathprefix.append("strategy_overview.csv"));
-    slot = loadInCSVSpec(slot, pathprefix.append("CAN_overview.csv"));
-    slot = loadInCSVSpec(slot, pathprefix.append("combined_overview.csv"));
+    slot = loadInCSVSpec(slot, pathprefix+"strategy_overview.csv");
+    slot = loadInCSVSpec(slot, pathprefix+"CAN_overview.csv");
+    slot = loadInCSVSpec(slot, pathprefix+"combined_overview.csv");
 
     //fill all the datafields with zeroes
     char zero[1] = {0};
@@ -38,6 +38,7 @@ void Serializer::restructureDatastructForDatablocks(int id) {
     for(int i = 0; i < dataStruct.at(lookUp[id]).second.length(); i++) {
         length += serialize[dataStruct.at(lookUp[id]).second.at(i).type]->getSize();
     }
+    qDebug() << "calculated Length" << length;
     dataStruct[lookUp[id]].second[0].dataSize = length;
     dataStruct[lookUp[id]].second[0].dataField.clear();
     QByteArray zeroes;
@@ -55,77 +56,80 @@ void Serializer::restructureDatastructForDatablocks(int id) {
 
 int Serializer::loadInCSVSpec(int i, QString file) {
     //interpret the canspec
+    qDebug() << file;
     QFile inputFile(file);
-    if (inputFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-       QTextStream in(&inputFile);
-       in.readLine();
-       in.readLine();
-       while (!in.atEnd()) {
-          QString line = in.readLine();
-          QStringList splitted = line.split(";");
-          quint32 id = splitted.at(0).toInt();
-          QString name = splitted.at(1);
-          QStringList fieldNames = splitted.at(2).split(",");
-          QStringList types = splitted.at(3).split(",");
-
-          QStringList toVisList=  splitted.at(13).split(","); //get the id's that
-          QStringList toStratList = splitted.at(12).split(","); //get the id's that
-          if (splitted.at(14) != "check") { //if this message should be written to the database
-              QList<LastDataStruct> list; //TODO autogenerate this
-              for (int j = 0; j < fieldNames.length(); j++) { //for each field
-                  bool toVis = false;
-                  for (int k = 0; k < toVisList.length(); k++) {
-                      toVisList[k].remove(" ");
-                      if(toVisList.at(k).toInt() == j && toVisList.at(k) != "") { //check whether it should be sent to the strat system
-                          toVis = true;
-                          break;
-                      }
-                  }
-                  bool toStrat = false;
-                  for (int k = 0; k < toStratList.length(); k++) {
-                      toStratList[k].remove(" ");
-                      if(toStratList.at(k).toInt() == j && toStratList.at(k) != "") { //check whether it should be sent to the strat system
-                          toStrat = true;
-                          break;
-                      }
-                  }
-
-                  Type type;
-                  types[j].remove(" ");
-                  QString thisType = types[j];
-                  if (thisType == "uint8_t")
-                      type = UInt8;
-                  else if (thisType == "uint16_t")
-                      type = UInt16;
-                  else if (thisType == "uint32_t")
-                      type = UInt32;
-                  else if (thisType == "uint64_t")
-                      type = UInt64;
-                  else if (thisType == "float")
-                      type = Float;
-                  else if (thisType == "int8_t")
-                      type = Int8;
-                  else if (thisType == "int16_t")
-                      type = Int16;
-                  else if (thisType == "int32_t")
-                      type = Int32;
-                  else if (thisType == "int64_t")
-                      type = Int64;
-                  else
-                      type = Other;
-
-                  name.remove(" ");
-                  fieldNames[j].remove(" ");
-                  list.append(LastDataStruct(type, toVis, toStrat, name+"_"+fieldNames.at(j)));
-                  //qDebug() << id << j << type << "," << toVis << "," << toStrat << "," << name+"_"+fieldNames.at(j);
-              }
-              dataStruct.append(qMakePair(id,list));
-              lookUp[id] = i; //so this id is to be found at index i of the list
-              i++; //increment for the id that is going to be written to the datastruct
-          }
-       }
-
+    if (!inputFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qWarning() << "Failed to open file: " << inputFile.errorString();
+        return i;
     }
+    qDebug() << "hoi";
+   QTextStream in(&inputFile);
+   in.readLine();
+   in.readLine();
+   while (!in.atEnd()) {
+      QString line = in.readLine();
+      QStringList splitted = line.split(";");
+      quint32 id = splitted.at(0).toInt();
+      QString name = splitted.at(1);
+      QStringList fieldNames = splitted.at(2).split(",");
+      QStringList types = splitted.at(3).split(",");
+
+      QStringList toVisList=  splitted.at(13).split(","); //get the id's that
+      QStringList toStratList = splitted.at(12).split(","); //get the id's that
+      if (splitted.at(14) != "check") { //if this message should be written to the database
+          QList<LastDataStruct> list; //TODO autogenerate this
+          for (int j = 0; j < fieldNames.length(); j++) { //for each field
+              bool toVis = false;
+              for (int k = 0; k < toVisList.length(); k++) {
+                  toVisList[k].remove(" ");
+                  if(toVisList.at(k).toInt() == j && toVisList.at(k) != "") { //check whether it should be sent to the strat system
+                      toVis = true;
+                      break;
+                  }
+              }
+              bool toStrat = false;
+              for (int k = 0; k < toStratList.length(); k++) {
+                  toStratList[k].remove(" ");
+                  if(toStratList.at(k).toInt() == j && toStratList.at(k) != "") { //check whether it should be sent to the strat system
+                      toStrat = true;
+                      break;
+                  }
+              }
+
+              Type type;
+              types[j].remove(" ");
+              QString thisType = types[j];
+              if (thisType == "uint8_t")
+                  type = UInt8;
+              else if (thisType == "uint16_t")
+                  type = UInt16;
+              else if (thisType == "uint32_t")
+                  type = UInt32;
+              else if (thisType == "uint64_t")
+                  type = UInt64;
+              else if (thisType == "float")
+                  type = Float;
+              else if (thisType == "int8_t")
+                  type = Int8;
+              else if (thisType == "int16_t")
+                  type = Int16;
+              else if (thisType == "int32_t")
+                  type = Int32;
+              else if (thisType == "int64_t")
+                  type = Int64;
+              else
+                  type = Other;
+
+              name.remove(" ");
+              fieldNames[j].remove(" ");
+              list.append(LastDataStruct(type, toVis, toStrat, name+"_"+fieldNames.at(j)));
+              //qDebug() << id << j << type << "," << toVis << "," << toStrat << "," << name+"_"+fieldNames.at(j);
+          }
+          dataStruct.append(qMakePair(id,list));
+          lookUp[id] = i; //so this id is to be found at index i of the list
+          i++; //increment for the id that is going to be written to the datastruct
+      }
+   }
     return i;
 }
 

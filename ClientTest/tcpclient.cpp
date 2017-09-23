@@ -4,9 +4,9 @@ TcpClient::TcpClient(quint32 number) : number(number), id(21), size(0), type_id(
 {
     qDebug() << "client "<< number << "Connecting...";
     connect(&socket, SIGNAL(readyRead()), SLOT(newMessage()));
-    //QHostAddress address("192.168.1.128");
+    QHostAddress address("192.168.1.145");
     socket.setParent(this);
-    socket.connectToHost(QHostAddress::SpecialAddress::LocalHost,5000);
+    socket.connectToHost(address,5000);
     if(!socket.waitForConnected()) {
         qDebug() << socket.error();
     }
@@ -157,17 +157,17 @@ void TcpClient::timerCheckout() {
         if (this->id >= 2030) {
             this->id = 21;
         }
+        using T = float;
         union {
-            char bytes[sizeof(quint32)];
-            quint32 value;
+            char bytes[sizeof(T)];
+            T value;
         } pi;
         id1.value = qToLittleEndian(this->id);
-        pi.value = qToLittleEndian<quint32>(4294967295);
+        pi.value = qToLittleEndian<T>(3.1415);
         socket.write(id1.bytes,4);
-        socket.write(pi.bytes,4);
-        socket.write(pi.bytes,4);
-        socket.write(pi.bytes,4);
-        socket.write(pi.bytes,4);
+        for (int i = 0; i < 16/sizeof(T); i++) {
+            socket.write(pi.bytes,sizeof(T));
+        }
         //socket.flush();
         this->id++;
     }

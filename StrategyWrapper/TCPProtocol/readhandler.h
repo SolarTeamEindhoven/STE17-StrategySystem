@@ -7,6 +7,7 @@
 #include <QTEndian>
 #include "tcpprotocol_global.h"
 #include "QThread"
+#include <QSocketNotifier>
 
 enum ClientType {
     mk5,
@@ -19,20 +20,20 @@ enum ClientType {
 class DataManager;
 struct SocketHandler;
 
-class TCPPROTOCOLSHARED_EXPORT HeaderHandler : public QObject
+class TCPPROTOCOLSHARED_EXPORT ReadHandler : public QObject
 {
      Q_OBJECT
 public:
-    HeaderHandler(QTcpSocket* socket, DataManager* dataManager, SocketHandler* socketHandler);
-    HeaderHandler(const HeaderHandler& copy);
-    HeaderHandler& operator=(const HeaderHandler& other) {
+    ReadHandler(QTcpSocket* socket, DataManager* dataManager, SocketHandler* socketHandler);
+    ReadHandler(const ReadHandler& copy);
+    ReadHandler& operator=(const ReadHandler& other) {
         this->clientType = other.clientType;
         this->socket = other.socket;
         this->dataManager = other.dataManager;
         this->socketHandler = other.socketHandler;
         return *this;
     }
-    virtual ~HeaderHandler();
+    virtual ~ReadHandler();
     void initializeConnects();
 
     ClientType clientType;

@@ -60,8 +60,8 @@ struct LastDataStruct {
 
 struct FieldSerializer {
 public:
-    virtual QByteArray fromLittle(QByteArray& data) = 0;
-    virtual QByteArray toLittle(QByteArray& data) = 0;
+    virtual void fromMk5Endianess(QByteArray* data, QTcpSocket* socket) = 0;
+    virtual void toMk5Endianess(QByteArray* data, QTcpSocket* socket) = 0;
     virtual const quint16 getSize() = 0;
 };
 
@@ -69,12 +69,10 @@ struct NoChange : public FieldSerializer {
 public:
     NoChange(quint16 size) : size(size) {}
 
-    QByteArray fromLittle(QByteArray& data) override {
-        return data;
+    void fromMk5Endianess(QByteArray* data, QTcpSocket* socket) override {
+        *data = socket->read(size);
     }
-    QByteArray toLittle(QByteArray& data) override {
-        return data;
-    }
+    void toMk5Endianess(QByteArray* data, QTcpSocket* socket) override {}
     const quint16 getSize() override {
         return size;
     }
@@ -83,24 +81,21 @@ private:
 };
 
 template <typename T>
-struct SerializeField : public FieldSerializer {
+struct SerializeInteger : public FieldSerializer {
 public:
-    QByteArray fromLittle(QByteArray& data) override {
-        QDataStream stream(&data, QIODevice::ReadWrite);
-        T number;
-        stream >> number;
-        qFromLittleEndian(number);
-        stream << number;
-        return data;
+    void fromMk5Endianess(QByteArray* data, QTcpSocket* socket) override {
+        QDataStream stream(socket);
+        stream.setByteOrder(QDataStream::BigEndian);
+        union {
+            T value;
+            char bytes[sizeof(T)];
+        } type;
+        stream >> type.value;
+        *data = QByteArray(type.bytes, sizeof(T));
     }
 
-    QByteArray toLittle(QByteArray& data) override {
-        QDataStream stream(&data, QIODevice::ReadWrite);
-        T number;
-        stream >> number;
-        qToLittleEndian(number);
-        stream << number;
-        return data;
+    void toMk5Endianess(QByteArray* data, QTcpSocket* socket) override {
+        QDataStream stream(data, QIODevice::ReadWrite);
     }
 
     const quint16 getSize() override {
@@ -111,7 +106,7 @@ public:
 class TCPPROTOCOLSHARED_EXPORT Serializer {
 public:
     Serializer() : noChange1(1), noChange4(4),
-                   serialize{&floatie, &noChange1, &noChange1, &uInt16, &uInt32, &uInt64, &noChange1, &int16, &int32, &int64},
+                   serialize{&noChange4, &noChange1, &noChange1, &uInt16, &uInt32, &uInt64, &noChange1, &int16, &int32, &int64},
                    lookUp{ 5000 }, newDataSinceLastCall(false), visMsgLength(0), stratMsgLength(0)
     {
         for (int i = 0; i < 2048; i++) {
@@ -121,21 +116,6 @@ public:
         showSpec();
     }
 
-    QByteArray toLittleEndian(quint32 id, quint32 subId, QByteArray& data) {
-        return toLittleEndian(dataStruct[id].second[subId].type, data);
-    }
-
-    QByteArray fromLittleEndian(quint32 id, quint32 subId, QByteArray& data) {
-        return fromLittleEndian(dataStruct[id].second[subId].type, data);
-    }
-
-    QByteArray toLittleEndian(Type type, QByteArray& data) {
-        return serialize[type]->toLittle(data);
-    }
-
-    QByteArray fromLittleEndian(Type type, QByteArray& data) {
-        return serialize[type]->fromLittle(data);
-    }
     QList<QPair<quint32, QList<LastDataStruct>>>* getData() {
         return &dataStruct;
     }
@@ -151,7 +131,9 @@ public:
             for (int i = 0; i < fieldList.size() && dataSize > 0; i++) {
                 fieldList[i].dataField.clear(); //clear the line
                 quint16 thisSize = serialize[fieldList[i].type]->getSize();
-                fieldList[i].dataField = socket->read(thisSize); //append datafield to list
+                //fieldList[i].dataField = socket->read(thisSize); //append datafield to list
+                serialize[fieldList[i].type]->fromMk5Endianess(&fieldList[i].dataField, socket);
+
                 if (thisSize != fieldList[i].dataField.length()) {
                     qDebug() << "Something went wrong reading "<< id << i << thisSize << fieldList[i].dataField.length();
                 }
@@ -287,13 +269,12 @@ public:
 private:
     NoChange noChange1;
     NoChange noChange4;
-    SerializeField<float> floatie;
-    SerializeField<quint16> uInt16;
-    SerializeField<quint32> uInt32;
-    SerializeField<quint64> uInt64;
-    SerializeField<qint16> int16;
-    SerializeField<qint32> int32;
-    SerializeField<qint64> int64;
+    SerializeInteger<quint16> uInt16;
+    SerializeInteger<quint32> uInt32;
+    SerializeInteger<quint64> uInt64;
+    SerializeInteger<qint16> int16;
+    SerializeInteger<qint32> int32;
+    SerializeInteger<qint64> int64;
     FieldSerializer* serialize[10];
 
     //fields

@@ -1,18 +1,18 @@
 #include "datamanager.h" //a bit of a way around, but I need the DM definition here
 
-HeaderHandler::HeaderHandler(QTcpSocket* socket, DataManager* dataManager, SocketHandler* parent) : QObject(nullptr),
+ReadHandler::ReadHandler(QTcpSocket* socket, DataManager* dataManager, SocketHandler* parent) : QObject(nullptr),
     clientType(unclear), socket(socket), dataManager(dataManager), socketHandler(parent), state(readType), id(0), size(0)
 {}
 
-HeaderHandler::HeaderHandler(const HeaderHandler& copy) : QObject(copy.parent()),
+ReadHandler::ReadHandler(const ReadHandler& copy) : QObject(copy.parent()),
     clientType(copy.clientType), socket(copy.socket), dataManager(copy.dataManager), socketHandler(copy.socketHandler),
     state(copy.state), id(copy.id), size(copy.size)
 {}
 
-HeaderHandler::~HeaderHandler() {
+ReadHandler::~ReadHandler() {
 }
 
-void HeaderHandler::readyRead() {
+void ReadHandler::readyRead() {
     switch(state) {
     case HHState::readType :
         readNextType();
@@ -31,7 +31,7 @@ void HeaderHandler::readyRead() {
     }
 }
 
-void HeaderHandler::readNextType() {
+void ReadHandler::readNextType() {
     if (socket->bytesAvailable() >= 4) { //check if there are enough bytes available
         union {
             char bytes[sizeof(quint32)];
@@ -48,7 +48,7 @@ void HeaderHandler::readNextType() {
             readNextData();
         }
         else if (id == 5) {
-            size = 16;
+            size = 15;
             state = readData;
             readNextData();
         }
@@ -83,7 +83,7 @@ void HeaderHandler::readNextType() {
     //else wait for next readyread signal
 }
 
-void HeaderHandler::readNextSize() {
+void ReadHandler::readNextSize() {
     if (socket->bytesAvailable() >= 4) { //check if there are enough bytes available
         union {
             char bytes[sizeof(quint32)];
@@ -91,13 +91,14 @@ void HeaderHandler::readNextSize() {
         } data;
         socket->read(data.bytes, sizeof(quint32));
         size = qFromLittleEndian(data.value);
+        qDebug() << id << " <-- id | size ---> " << size;
         state = readData;
         readNextData();
     }
     //else wait for next readyread signal
 }
 
-void HeaderHandler::readNextData() {
+void ReadHandler::readNextData() {
     if (socket->bytesAvailable() >= size) { //check if there are enough bytes available
         dataManager->newField(id, size, socket);
         state = readType;
@@ -106,7 +107,7 @@ void HeaderHandler::readNextData() {
     //else wait for next readyread signal
 }
 
-void HeaderHandler::readNextNewClient() {
+void ReadHandler::readNextNewClient() {
     if (socket->bytesAvailable() >= 2) {
         union {
             char bytes[sizeof(quint8)];
@@ -148,7 +149,7 @@ void HeaderHandler::readNextNewClient() {
     } //else wait for next readyread signal
 }
 
-void HeaderHandler::initializeConnects() {
+void ReadHandler::initializeConnects() {
     socket->setParent(this); //move it with us to another thread
     connect(this, SIGNAL(newClientType(ClientType, QTcpSocket*)), dataManager, SLOT(newClientType(ClientType, QTcpSocket*)), Qt::DirectConnection);
     connect(this, SIGNAL(nextMessage()), this, SLOT(readyRead()), Qt::QueuedConnection);

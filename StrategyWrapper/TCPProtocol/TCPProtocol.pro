@@ -28,20 +28,22 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
     datamanager.cpp \
     serializer.cpp \
-    headerhandler.cpp \
     writehandler.cpp \
     dbhandler.cpp \
-    vistimerthread.cpp
+    vistimerthread.cpp \
+    mk5client.cpp \
+    readhandler.cpp
 
 HEADERS += \
         tcpprotocol_global.h \  
     datamanager.h \
     serializer.h \
-    headerhandler.h \
     sockethandler.h \
     writehandler.h \
     dbhandler.h \
-    vistimerthread.h
+    vistimerthread.h \
+    mk5client.h \
+    readhandler.h
 
 STE_BUILD_PATH_PREFIX = $$relative_path($$OUT_PWD)
 

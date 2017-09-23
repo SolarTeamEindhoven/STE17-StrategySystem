@@ -4,7 +4,7 @@
 #include <QTcpSocket>
 #include <QTimer>
 #include <QtEndian>
-#include "headerhandler.h"
+#include "readhandler.h"
 
 class TCPPROTOCOLSHARED_EXPORT WriteHandler : public QObject
 {

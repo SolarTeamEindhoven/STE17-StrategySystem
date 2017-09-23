@@ -23,8 +23,8 @@ int main(int argc, char *argv[])
     TcpClient vis3(5);
     vis3.identify(1);*/
 
-    wfs.setTimer2();
-    mk5.setTimer();
+    //wfs.setTimer2();
+    //mk5.setTimer();
 
     return a.exec();
 }

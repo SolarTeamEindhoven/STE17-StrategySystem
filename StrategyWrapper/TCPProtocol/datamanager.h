@@ -8,10 +8,13 @@
 #include <QDateTime>
 #include "sockethandler.h"
 #include "vistimerthread.h"
+#include "mk5client.h"
 #include "dbhandler.h"
 #include "serializer.h"
 #include <QHostAddress>
 #include <QDebug>
+
+#define MULTITHREAD false
 
 class TCPPROTOCOLSHARED_EXPORT DataManager : public QObject
 {
@@ -42,18 +45,17 @@ public slots:
 private:
     void setAndStartTimer();
     Serializer serializer;
-    DBHandler dbHandler;
+    //DBHandler dbHandler;
     QDateTime time;
 
     QHash<QTcpSocket*, SocketHandler> socketHash;
     QTcpServer* server;
+    MK5Client mk5;
 
     QMutex socketHashMutex;
     QMutex socketHandlerListMutex;
     QTimer visTimer;
     VisTimerThread visTimerThread;
-    QThread otherThread;
-    QThread mk5Thread;
 };
 
 #endif // DATAMANAGER_H

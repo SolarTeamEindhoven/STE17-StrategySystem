@@ -2,23 +2,23 @@
 #define SOCKETHANDLER_H
 
 #include <QtCore>
-#include "headerhandler.h"
+#include "readhandler.h"
 #include "writehandler.h"
 #include "tcpprotocol_global.h"
 
 struct SocketHandler : public QObject {
 public:
     SocketHandler(QTcpSocket* socket, DataManager* parent)
-        : writeHandler(socket, parent, this), headerHandler(socket, parent, this), socket(socket), dataManager(parent)
+        : writeHandler(socket, parent, this), readHandler(socket, parent, this), socket(socket), dataManager(parent)
     {}
 
     SocketHandler(const SocketHandler& copy)
-        : QObject(copy.parent()), writeHandler(copy.writeHandler), headerHandler(copy.headerHandler), socket(copy.socket), dataManager(copy.dataManager) {}
+        : QObject(copy.parent()), writeHandler(copy.writeHandler), readHandler(copy.readHandler), socket(copy.socket), dataManager(copy.dataManager) {}
 
     SocketHandler& operator= (const SocketHandler& handler) {
         this->socket = handler.socket;
         this->dataManager = handler.dataManager;
-        this->headerHandler = handler.headerHandler;
+        this->readHandler = handler.readHandler;
         this->writeHandler = handler.writeHandler;
         return *this;
     }
@@ -28,11 +28,11 @@ public:
     //initialize connects after all those copies etc
     void initializeConnects() {
         writeHandler.initializeConnects();
-        headerHandler.initializeConnects();
+        readHandler.initializeConnects();
     }
 
     WriteHandler writeHandler;
-    HeaderHandler headerHandler;
+    ReadHandler readHandler;
     QTcpSocket* socket;
     DataManager* dataManager;
 };
