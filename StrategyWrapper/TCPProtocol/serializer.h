@@ -27,7 +27,14 @@ enum Type {
     UInt16 = 7,
     UInt32 = 8,
     UInt64 = 9,
-    BitfieldBool = 10
+
+    Int16BMS = 10,
+    Int32BMS = 11,
+    Int64BMS = 12,
+
+    UInt16BMS = 13,
+    UInt32BMS = 14,
+    UInt64BMS = 15,
 };
 
 struct LastDataStruct {
@@ -62,7 +69,6 @@ struct LastDataStruct {
 struct FieldSerializer {
 public:
     virtual void fromMk5Endianess(QByteArray* data, QTcpSocket* socket) = 0;
-    virtual void toMk5Endianess(QByteArray* data, QTcpSocket* socket) = 0;
     virtual const quint16 getSize() = 0;
 };
 
@@ -73,7 +79,6 @@ public:
     void fromMk5Endianess(QByteArray* data, QTcpSocket* socket) override {
         *data = socket->read(size);
     }
-    void toMk5Endianess(QByteArray* data, QTcpSocket* socket) override {}
     const quint16 getSize() override {
         return size;
     }
@@ -95,8 +100,23 @@ public:
         *data = QByteArray(type.bytes, sizeof(T));
     }
 
-    void toMk5Endianess(QByteArray* data, QTcpSocket* socket) override {
-        QDataStream stream(data, QIODevice::ReadWrite);
+    const quint16 getSize() override {
+        return sizeof(T);
+    }
+};
+
+template <typename T>
+struct SerializeIntegerBMS : public FieldSerializer {
+public:
+    void fromMk5Endianess(QByteArray* data, QTcpSocket* socket) override {
+        QDataStream stream(socket);
+        stream.setByteOrder(QDataStream::LittleEndian);
+        union {
+            T value;
+            char bytes[sizeof(T)];
+        } type;
+        stream >> type.value;
+        *data = QByteArray(type.bytes, sizeof(T));
     }
 
     const quint16 getSize() override {
@@ -107,7 +127,8 @@ public:
 class TCPPROTOCOLSHARED_EXPORT Serializer {
 public:
     Serializer() : noChange1(1), noChange4(4),
-                   serialize{&noChange4, &noChange1, &noChange1, &uInt16, &uInt32, &uInt64, &noChange1, &int16, &int32, &int64},
+                   serialize{&noChange4, &noChange1, &noChange1, &int16, &int32, &int64, &noChange1, &uInt16, &uInt32, &uInt64,
+                             &int16BMS, &int32BMS, &int64BMS, &uInt16BMS, &uInt32BMS, &uInt64BMS},
                    lookUp{ 5000 }, newDataSinceLastCall(false), visMsgLength(0), stratMsgLength(0)
     {
         for (int i = 0; i < 2048; i++) {
@@ -166,6 +187,7 @@ public:
 
     void sendStratCANData(QTcpSocket* socket) {
        canMutex.lock();
+       socket->write(lastDistance);
          for (int i = 0; i < dataStruct.size(); i++) {
             if (dataStruct[i].first >= 10) {
                 for (int j = 0; j < dataStruct[i].second.size(); j++) {
@@ -197,9 +219,6 @@ public:
             if (dataStruct[i].first >= 10) {
                 for (int j = 0; j < dataStruct[i].second.size(); j++) {
                     LastDataStruct* str = &dataStruct[i].second[j];
-                    if (str->dataSize != str->dataField.length()) {
-                        qDebug() << "Warning (sendVisData): Length mismatch indexes" << i << j << " lengths "<< str->dataField.length() << str->dataSize;
-                    }
                     if (str->toVis && str->dataField.length() > 0) {
                         data.append(str->dataField);
                     }
@@ -332,7 +351,14 @@ private:
     SerializeInteger<qint16> int16;
     SerializeInteger<qint32> int32;
     SerializeInteger<qint64> int64;
-    FieldSerializer* serialize[10];
+    SerializeIntegerBMS<quint16> uInt16BMS;
+    SerializeIntegerBMS<quint32> uInt32BMS;
+    SerializeIntegerBMS<quint64> uInt64BMS;
+    SerializeIntegerBMS<qint16> int16BMS;
+    SerializeIntegerBMS<qint32> int32BMS;
+    SerializeIntegerBMS<qint64> int64BMS;
+
+    FieldSerializer* serialize[16];
 
     QByteArray lastTimestamp;
     QByteArray lastDistance;

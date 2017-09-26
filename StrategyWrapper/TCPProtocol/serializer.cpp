@@ -31,6 +31,32 @@ void Serializer::initializeIds() {
     restructureDatastructForDatablocks(4);
     restructureDatastructForDatablocks(5);
     restructureDatastructForDatablocks(6);
+
+    //Beunfix for compensating types for BMS
+    for(int i = 0; i < dataStruct.length(); i++) {
+        if (dataStruct.at(i).first >= 100 && dataStruct.at(i).first < 200) { //if BMS message
+            for (int j = 0; j < dataStruct.at(i).second.length(); j++) {
+                if (dataStruct.at(i).second.at(j).type == UInt16) {
+                    dataStruct[i].second[j].type = UInt16BMS;
+                }
+                else if (dataStruct.at(i).second.at(j).type == UInt32) {
+                    dataStruct[i].second[j].type = UInt32BMS;
+                }
+                else if (dataStruct.at(i).second.at(j).type == UInt64) {
+                    dataStruct[i].second[j].type = UInt64BMS;
+                }
+                else if (dataStruct.at(i).second.at(j).type == Int16) {
+                    dataStruct[i].second[j].type = Int16BMS;
+                }
+                else if (dataStruct.at(i).second.at(j).type == Int32) {
+                    dataStruct[i].second[j].type = Int32BMS;
+                }
+                else if (dataStruct.at(i).second.at(j).type == Int64) {
+                    dataStruct[i].second[j].type = Int64BMS;
+                }
+            }
+        }
+    }
 }
 
 void Serializer::restructureDatastructForDatablocks(int id) {

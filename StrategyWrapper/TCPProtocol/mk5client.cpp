@@ -22,9 +22,8 @@ void MK5Client::disconnectSocket() {
 void MK5Client::run() {
     QHostAddress address("192.168.1.104");
     socket.connectToHost(address,4232);
-    socket.waitForConnected();
+    qDebug() << "Connected To Mk5:" << socket.waitForConnected();
     QObject::connect(&socket, &QTcpSocket::disconnected, this, &MK5Client::disconnectSocket);
     handler.initializeConnects();
-    qDebug() << "Thread initialized, starting execution";
     exec();
 }
