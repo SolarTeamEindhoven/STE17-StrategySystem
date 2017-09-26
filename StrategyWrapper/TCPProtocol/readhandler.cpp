@@ -39,6 +39,7 @@ void ReadHandler::readNextType() {
         } data;
         socket->read(data.bytes, sizeof(quint32));
         id = qFromLittleEndian(data.value);
+        //qDebug() << "id" << id;
         //interpret the id to determine what's next
         if (id >= 10 && id < 2048) {
             char bytes[8];
@@ -53,7 +54,7 @@ void ReadHandler::readNextType() {
             readNextData();
         }
         else if (id == 6) {
-            size = 18; //TODO: change this
+            size = 35*4; //TODO: change this
             state = readData;
             readNextData();
         }
@@ -91,7 +92,7 @@ void ReadHandler::readNextSize() {
         } data;
         socket->read(data.bytes, sizeof(quint32));
         size = qFromLittleEndian(data.value);
-        qDebug() << id << " <-- id | size ---> " << size;
+        //qDebug() << id << " <-- id | size ---> " << size;
         state = readData;
         readNextData();
     }
@@ -99,6 +100,7 @@ void ReadHandler::readNextSize() {
 }
 
 void ReadHandler::readNextData() {
+    qDebug() << "Bytes available " << socket->bytesAvailable();
     if (socket->bytesAvailable() >= size) { //check if there are enough bytes available
         dataManager->newField(id, size, socket);
         state = readType;

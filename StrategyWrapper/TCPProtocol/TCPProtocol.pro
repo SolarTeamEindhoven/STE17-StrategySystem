@@ -32,7 +32,9 @@ SOURCES += \
     dbhandler.cpp \
     vistimerthread.cpp \
     mk5client.cpp \
-    readhandler.cpp
+    readhandler.cpp \
+    distancecalculator.cpp \
+    combinedmessagegenerator.cpp
 
 HEADERS += \
         tcpprotocol_global.h \  
@@ -43,7 +45,9 @@ HEADERS += \
     dbhandler.h \
     vistimerthread.h \
     mk5client.h \
-    readhandler.h
+    readhandler.h \
+    distancecalculator.h \
+    combinedmessagegenerator.h
 
 STE_BUILD_PATH_PREFIX = $$relative_path($$OUT_PWD)
 

@@ -71,6 +71,7 @@ int Serializer::loadInCSVSpec(int i, QString file) {
       QStringList splitted = line.split(";");
       quint32 id = splitted.at(0).toInt();
       QString name = splitted.at(1);
+      name.remove(" ");
       QStringList fieldNames = splitted.at(2).split(",");
       QStringList types = splitted.at(3).split(",");
 
@@ -121,9 +122,13 @@ int Serializer::loadInCSVSpec(int i, QString file) {
                   type = Other;
 
               name.remove(" ");
+
               fieldNames[j].remove(" ");
+              nameToId.insert(name+"_"+fieldNames.at(j), qMakePair<quint32, quint32>(i,j));
+              qDebug() << name+"_"+fieldNames.at(j) << i << j;
+
               list.append(LastDataStruct(type, toVis, toStrat, name+"_"+fieldNames.at(j)));
-              //qDebug() << id << j << type << "," << toVis << "," << toStrat << "," << name+"_"+fieldNames.at(j);
+              qDebug() << i << id << j << type << "," << toVis << "," << toStrat << "," << name+"_"+fieldNames.at(j);
           }
           dataStruct.append(qMakePair(id,list));
           lookUp[id] = i; //so this id is to be found at index i of the list

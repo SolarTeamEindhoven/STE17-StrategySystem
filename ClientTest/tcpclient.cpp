@@ -4,7 +4,7 @@ TcpClient::TcpClient(quint32 number) : number(number), id(21), size(0), type_id(
 {
     qDebug() << "client "<< number << "Connecting...";
     connect(&socket, SIGNAL(readyRead()), SLOT(newMessage()));
-    QHostAddress address("192.168.1.145");
+    QHostAddress address("192.168.1.153");
     socket.setParent(this);
     socket.connectToHost(address,5000);
     if(!socket.waitForConnected()) {

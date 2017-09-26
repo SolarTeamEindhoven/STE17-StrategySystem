@@ -5,6 +5,7 @@
 #include <QtEndian>
 #include <QTcpSocket>
 #include <QStringList>
+#include <combinedmessagegenerator.h>
 #include <QFile>
 #include <QDebug>
 #include "tcpprotocol_global.h"
@@ -183,20 +184,22 @@ public:
             char bytes[4];
             quint32 value;
         } id;
-        union {
-            char bytes[8];
-            quint64 value;
-        } timestamp;
         id.value = qToLittleEndian<quint32>(1);
-        timestamp.value = qToLittleEndian<quint64>(((QDateTime::currentMSecsSinceEpoch() + DATAPERIOD/2) / DATAPERIOD)*DATAPERIOD); //rounded to the next interval
+
         QByteArray data(id.bytes,4);
-        data.append(timestamp.bytes,8);
-        data.append(id.bytes,4); //distance... TODO: fix this
+
         canMutex.lock();
+        updateGeneratedFields(); //combine all kinds of fields to get generated messages
+
+        data.append(lastTimestamp);
+        data.append(lastDistance);
          for (int i = 0; i < dataStruct.size(); i++) {
             if (dataStruct[i].first >= 10) {
                 for (int j = 0; j < dataStruct[i].second.size(); j++) {
                     LastDataStruct* str = &dataStruct[i].second[j];
+                    if (str->dataSize != str->dataField.length()) {
+                        qDebug() << "Warning (sendVisData): Length mismatch indexes" << i << j << " lengths "<< str->dataField.length() << str->dataSize;
+                    }
                     if (str->toVis && str->dataField.length() > 0) {
                         data.append(str->dataField);
                     }
@@ -204,8 +207,8 @@ public:
             }
         }
         canMutex.unlock();
-        if (data.length() != visMsgLength+4) {
-            qDebug() << "Error vis length mismatch " <<data.length() << " " << visMsgLength+4; //+4 for ID
+        if (data.length() != visMsgLength) {
+            qDebug() << "Error vis length mismatch " <<data.length() << " " << visMsgLength;
         }
         return data;
     }
@@ -267,6 +270,60 @@ public:
     quint32 stratMsgLength;
 
 private:
+    //Mutex should already be locked
+    QByteArray getField(QString name) {
+        if (!nameToId.contains(name)) {
+            qDebug() << "Warning (getField): name " << name << " not found in spec.";
+        }
+        //qDebug() << nameToId.find(name).value().first;
+        //qDebug() << nameToId.find(name).value().second;
+        return dataStruct.at(nameToId.find(name).value().first).second.at(nameToId.find(name).value().second).dataField;
+    }
+
+    //Mutex should already be locked
+    void setField(QString name, QByteArray data) {
+        if (!nameToId.contains(name)) {
+            qDebug() << "Warning (setField): name " << name << " not found in spec.";
+        }
+        if (data.length() != dataStruct[nameToId.find(name).value().first].second[nameToId.find(name).value().second].dataSize) {
+            qDebug() << "Warning (setField): name " << name << " length mismatch" << data.length() << dataStruct[nameToId.find(name).value().first].second[nameToId.find(name).value().second].dataSize;
+        }
+        dataStruct[nameToId.find(name).value().first].second[nameToId.find(name).value().second].dataField = data;
+    }
+
+    //NOTE: the mutex should already be locked
+    void updateGeneratedFields() {
+        union {
+            char bytes[8];
+            quint64 value;
+        } timestamp;
+        timestamp.value = qToLittleEndian<quint64>(((QDateTime::currentMSecsSinceEpoch() + DATAPERIOD/2) / DATAPERIOD)*DATAPERIOD); //rounded to the next interval
+        lastTimestamp = QByteArray(timestamp.bytes,4);
+
+        lastDistance = generator.getDistance(timestamp.value, getField("MK5_GPS_lat"),
+                                                  getField("MK5_GPS_lon"),
+                                                  getField("MCU_Speed_Message_measured_speed"));
+
+        setField("P_mot_tritium_", generator.addFloats(getField("MCU_Motor_Power_leftMotor"), getField("MCU_Motor_Power_rightMotor")));
+        setField("P_aux_", generator.multiplyFloatQint32dv1000(getField("LVC_HVCurrentLV_current"),getField("BMS_BatteryCurrentVoltageHP_BatteryVoltageHP")));
+        setField("I_mppt1_out_", generator.divideFloats(getField("ChC_MPPT1_Output_power_in"), getField("ChC_MPPT1_Output_voltage_out")));
+        setField("I_mppt2_out_", generator.divideFloats(getField("ChC_MPPT2_Output_power_in"), getField("ChC_MPPT2_Output_voltage_out")));
+        setField("I_mppt3_out_", generator.divideFloats(getField("ChC_MPPT3_Output_power_in"), getField("ChC_MPPT3_Output_voltage_out")));
+        setField("I_mppt_tot_", generator.addFloats(getField("I_mppt1_out_"), getField("I_mppt2_out_"), getField("I_mppt3_out_")));
+        setField("I_mot_bus_", generator.subtractQint32dvFloats(getField("BMS_BatteryCurrentVoltageHP_BatteryCurrentHP"), 1000.0, getField("I_mppt_tot_"), getField("LVC_HVCurrentLV_current")));
+        setField("P_mot_bus_", generator.subtractQint32dvFloats(getField("BMS_BatteryPower_BatteryPower"), 1.0, getField("ChC_Solar_Wattage_solar_wattage"), getField("P_aux_")));
+
+        QList<QByteArray> types;
+        for (int i = 1; i < 7; i++) {
+            QString str = "BMS_MaxTempBuckets_MaxTempBucket"+QString::number(i);
+            types.append(getField(str));
+        }
+        setField("T_bucket_max_", generator.maxQint32s(types));
+        setField("T_mot_max_", generator.maxFloats(getField("Inv_HeatSink_Motor_Temp_Measurement_L_motorTemp"), getField("Inv_HeatSink_Motor_Temp_Measurement_R_motorTemp")));
+        setField("T_tritium_max_", generator.maxFloats(getField("Inv_DSP_Board_Temperature_Measurement_L_dspBoardTemp"), getField("Inv_DSP_Board_Temperature_Measurement_R_dspBoardTemp")));
+        setField("T_heatsink_max_", generator.maxFloats(getField("Inv_HeatSink_Motor_Temp_Measurement_L_heatsinkTemp"), getField("Inv_HeatSink_Motor_Temp_Measurement_R_heatsinkTemp")));
+    }
+
     NoChange noChange1;
     NoChange noChange4;
     SerializeInteger<quint16> uInt16;
@@ -277,12 +334,18 @@ private:
     SerializeInteger<qint64> int64;
     FieldSerializer* serialize[10];
 
+    QByteArray lastTimestamp;
+    QByteArray lastDistance;
+    CombinedMessageGenerator generator;
+
     //fields
     //ID 32 field 2 would be at Qpair list position lookUp[32], and lastDataStruct list position 2.
     QList<QPair<quint32, QList<LastDataStruct>>> dataStruct;
     QMutex dataBlocksMutex; //for id 0-10
     QMutex canMutex; //for id 10+
     quint32 lookUp[2048];
+
+    QHash<QString, QPair<quint32, quint32>> nameToId;
 
     bool newDataSinceLastCall;
 

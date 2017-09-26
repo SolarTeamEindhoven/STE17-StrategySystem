@@ -11,6 +11,7 @@
 #include "mk5client.h"
 #include "dbhandler.h"
 #include "serializer.h"
+#include "combinedmessagegenerator.h"
 #include <QHostAddress>
 #include <QDebug>
 
@@ -45,6 +46,7 @@ public slots:
 private:
     void setAndStartTimer();
     Serializer serializer;
+
     //DBHandler dbHandler;
     QDateTime time;
 
