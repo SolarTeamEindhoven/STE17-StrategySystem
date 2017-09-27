@@ -137,7 +137,7 @@ void DataManager::sendField(quint32 id, QTcpSocket* socket) {
 
 void DataManager::timerCallBack() {
     //qDebug() << "Timer call";
-    if (serializer.checkNewData()) {
+    if (serializer.checkNewData() || true) {
         //qDebug() << "Sending vis message";
         QByteArray data = serializer.sendVisData();
         emit newVisData(data);

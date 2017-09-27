@@ -63,7 +63,7 @@ void TcpClient::newMessage() {
                     socket.read(timestamp.bytes,8);
                     timestamp.value = qFromLittleEndian(timestamp.value);
                     qDebug() << "New vismessage found" << timestamp.value;
-                    size = 262;
+                    size = 220;
                     readingType = false;
                 }
                 else if (id1.value == 2 || id1.value == 4) {

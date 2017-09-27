@@ -31,6 +31,7 @@ void Serializer::initializeIds() {
     restructureDatastructForDatablocks(4);
     restructureDatastructForDatablocks(5);
     restructureDatastructForDatablocks(6);
+    showSpec();
 
     //Beunfix for compensating types for BMS
     for(int i = 0; i < dataStruct.length(); i++) {
@@ -151,7 +152,7 @@ int Serializer::loadInCSVSpec(int i, QString file) {
 
               fieldNames[j].remove(" ");
               nameToId.insert(name+"_"+fieldNames.at(j), qMakePair<quint32, quint32>(i,j));
-              qDebug() << name+"_"+fieldNames.at(j) << i << j;
+              //qDebug() << name+"_"+fieldNames.at(j) << i << j;
 
               list.append(LastDataStruct(type, toVis, toStrat, name+"_"+fieldNames.at(j)));
               qDebug() << i << id << j << type << "," << toVis << "," << toStrat << "," << name+"_"+fieldNames.at(j);
@@ -176,7 +177,7 @@ void Serializer::showSpec() {
         }
     }
     count = 2;
-    int lengthCount = 12;
+    int lengthCount = 16; //4 id, 8 timestamp, 4 distance
     qDebug() << " ";
     qDebug() << "Visualizer spec:";
     qDebug() << "1,timestamp,5";
