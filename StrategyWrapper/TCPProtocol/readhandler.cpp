@@ -39,7 +39,7 @@ void ReadHandler::readNextType() {
         } data;
         socket->read(data.bytes, sizeof(quint32));
         id = qFromLittleEndian(data.value);
-        qDebug() << "id" << id;
+        //qDebug() << "id" << id;
         //interpret the id to determine what's next
         if (id >= 10 && id < 2048) {
             char bytes[8];
@@ -92,7 +92,7 @@ void ReadHandler::readNextSize() {
         } data;
         socket->read(data.bytes, sizeof(quint32));
         size = qFromLittleEndian(data.value);
-        //qDebug() << id << " <-- id | size ---> " << size;
+        qDebug() << id << " <-- id | size ---> " << size;
         state = readData;
         readNextData();
     }

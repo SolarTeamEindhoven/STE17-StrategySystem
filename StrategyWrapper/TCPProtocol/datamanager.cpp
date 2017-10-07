@@ -83,11 +83,11 @@ void DataManager::newClientType(ClientType type, QTcpSocket* socket) {
         connect(this, SIGNAL(newSTSData(quint32)), writeHandler, SLOT(sendRowsRequest(quint32)));
         connect(this, SIGNAL(newLTSData(quint32)), writeHandler, SLOT(sendRowsRequest(quint32)));
         connect(this, SIGNAL(newParamData(quint32)), writeHandler, SLOT(sendRowsRequest(quint32)));
-        connect(this, SIGNAL(newWFSData(quint32)), writeHandler, SLOT(sendRowsRequest(quint32)));
+        //connect(this, SIGNAL(newWFSData(quint32)), writeHandler, SLOT(sendRowsRequest(quint32)));
 
         QByteArray visData = serializer.sendVisData();
         //writeHandler->addVisData(visData);
-        writeHandler->sendRowsRequest(2);
+        //writeHandler->sendRowsRequest(2);
         writeHandler->sendRowsRequest(4);
         writeHandler->sendRowsRequest(5);
         writeHandler->sendRowsRequest(6);
@@ -137,10 +137,13 @@ void DataManager::sendField(quint32 id, QTcpSocket* socket) {
 
 void DataManager::timerCallBack() {
     //qDebug() << "Timer call";
-    if (serializer.checkNewData() || true) {
+    if (serializer.checkNewData()) {
         //qDebug() << "Sending vis message";
         QByteArray data = serializer.sendVisData();
         emit newVisData(data);
+    }
+    else {
+        qDebug() << "No MK5 connection";
     }
 }
 

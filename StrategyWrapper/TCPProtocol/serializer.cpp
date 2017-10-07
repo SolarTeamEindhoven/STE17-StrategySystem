@@ -177,7 +177,7 @@ void Serializer::showSpec() {
         }
     }
     count = 2;
-    int lengthCount = 16; //4 id, 8 timestamp, 4 distance
+    int lengthCount = 24; //4 id, 8 timestamp, 4 distance + 2*4 other distances
     qDebug() << " ";
     qDebug() << "Visualizer spec:";
     qDebug() << "1,timestamp,5";
@@ -191,6 +191,11 @@ void Serializer::showSpec() {
             }
         }
     }
+    count++;
+    qDebug() << count << ", distMK5,0";
+    count++;
+    qDebug() << count << ", distSpeed,0";
+
     //qDebug() << "length" << lengthCount;
     visMsgLength = lengthCount;
     lengthCount = 12;

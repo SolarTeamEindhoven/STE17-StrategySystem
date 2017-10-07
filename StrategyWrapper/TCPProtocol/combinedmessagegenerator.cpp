@@ -45,12 +45,23 @@ QByteArray CombinedMessageGenerator::maxQint32s(QList<QByteArray> quint8s) {
     return convertFrom<float>((float) (max));
 }
 
-QByteArray CombinedMessageGenerator::subtractQint32dvFloats(QByteArray plus, float divisor, QByteArray minusOne, QByteArray minusTwo) {
-    return convertFrom<float>((float) (convertTo<qint32>(plus))/divisor - convertTo<float>(minusOne) - convertTo<float>(minusTwo));
+QByteArray CombinedMessageGenerator::subtractQint32dvFloats(QByteArray plus, float divisor, float divisor2, QByteArray plusTwo, QByteArray minusTwo) {
+    //qDebug() << "P_batt" << ((convertTo<quint32>(plus))/divisor);
+    //qDebug() << "P_solar" << (convertTo<float>(plusTwo)/divisor2);
+    //qDebug() << "P_aux" << convertTo<float>(minusTwo);
+    //qDebug() << "P_mot_bus" << ((float) ((convertTo<qint32>(plus)))/divisor + convertTo<float>(plusTwo)/divisor2 - convertTo<float>(minusTwo));
+    return convertFrom<float>((float) ((convertTo<qint32>(plus))/divisor + convertTo<float>(plusTwo)/divisor2 - convertTo<float>(minusTwo)));
 }
 
 QByteArray CombinedMessageGenerator::divideFloats(QByteArray one, QByteArray two) {
     return convertFrom<float>(convertTo<float>(one) / convertTo<float>(two));
+}
+
+QByteArray CombinedMessageGenerator::getDistMK5() {
+    return convertFrom<float>(distanceCalculator.distMK5);
+}
+QByteArray CombinedMessageGenerator::getDistSpeed() {
+    return convertFrom<float>(distanceCalculator.distSpeed);
 }
 
 

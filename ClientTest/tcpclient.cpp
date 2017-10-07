@@ -120,7 +120,7 @@ void TcpClient::writeLargeData() {
         quint32 value;
     }id1, id, useless, size;
 
-    int numberOfRows = (8*36*29*1024)/8;
+    int numberOfRows = (8*1000*1000)/8;
     quint32 sizenumber = numberOfRows*8;
     quint32 idnumber = 2;
     size.value = qToLittleEndian(sizenumber);

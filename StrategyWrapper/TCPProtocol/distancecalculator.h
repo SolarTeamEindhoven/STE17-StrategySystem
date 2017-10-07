@@ -13,6 +13,9 @@ public:
     DistanceCalculator();
     float getDistance(quint64 timestamp, float lat, float lon, float speed);
 
+
+    float distMK5;
+    float distSpeed;
 private:
     struct Row {
         Row(float id, float lat, float lon, float x) : id(id), lat(lat), lon(lon), x(x) {}
@@ -31,6 +34,8 @@ private:
     float lastSpeed;
     float lastLat;
     float lastLon;
+
+
 
     float getDistanceThisTimestamp(float distanceTraveled, float lat, float lon, bool checkAll);
     float combineDistances(quint64 thisTimestamp, float distance);

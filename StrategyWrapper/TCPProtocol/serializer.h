@@ -229,6 +229,9 @@ public:
                 }
             }
         }
+        data.append(lastMK5Dist);
+        data.append(lastSpeedDist);
+
         canMutex.unlock();
         if (data.length() != visMsgLength) {
             qDebug() << "Error vis length mismatch " <<data.length() << " " << visMsgLength;
@@ -323,18 +326,20 @@ private:
         timestamp.value = qToLittleEndian<quint64>(((QDateTime::currentMSecsSinceEpoch() + DATAPERIOD/2) / DATAPERIOD)*DATAPERIOD); //rounded to the next interval
         lastTimestamp = QByteArray(timestamp.bytes,8);
 
-        lastDistance = generator.getDistance(timestamp.value, getField("MK5_GPS_lat"),
-                                                  getField("MK5_GPS_lon"),
+        lastDistance = generator.getDistance(timestamp.value, getField("MK5_Strat_GPS_lat"),
+                                                  getField("MK5_Strat_GPS_lon"),
                                                   getField("MCU_Speed_Message_measured_speed"));
 
+        lastMK5Dist = generator.getDistMK5();
+        lastSpeedDist = generator.getDistSpeed();
         setField("P_mot_tritium_", generator.addFloats(getField("MCU_Motor_Power_leftMotor"), getField("MCU_Motor_Power_rightMotor")));
         setField("P_aux_", generator.multiplyFloatQint32dv1000(getField("LVC_HVCurrentLV_current"),getField("BMS_BatteryCurrentVoltageHP_BatteryVoltageHP")));
         setField("I_mppt1_out_", generator.divideFloats(getField("ChC_MPPT1_Output_power_in"), getField("ChC_MPPT1_Output_voltage_out")));
         setField("I_mppt2_out_", generator.divideFloats(getField("ChC_MPPT2_Output_power_in"), getField("ChC_MPPT2_Output_voltage_out")));
         setField("I_mppt3_out_", generator.divideFloats(getField("ChC_MPPT3_Output_power_in"), getField("ChC_MPPT3_Output_voltage_out")));
         setField("I_mppt_tot_", generator.addFloats(getField("I_mppt1_out_"), getField("I_mppt2_out_"), getField("I_mppt3_out_")));
-        setField("I_mot_bus_", generator.subtractQint32dvFloats(getField("BMS_BatteryCurrentVoltageHP_BatteryCurrentHP"), 1000.0, getField("I_mppt_tot_"), getField("LVC_HVCurrentLV_current")));
-        setField("P_mot_bus_", generator.subtractQint32dvFloats(getField("BMS_BatteryPower_BatteryPower"), 1.0, getField("ChC_Solar_Wattage_solar_wattage"), getField("P_aux_")));
+        setField("I_mot_bus_", generator.subtractQint32dvFloats(getField("BMS_BatteryCurrentVoltageHP_BatteryCurrentHP"), 1000.0, 1000.0, getField("I_mppt_tot_"), getField("LVC_HVCurrentLV_current")));
+        setField("P_mot_bus_", generator.subtractQint32dvFloats(getField("BMS_BatteryPower_BatteryPower"), 1.0, 1000.0, getField("ChC_Solar_Wattage_solar_wattage"), getField("P_aux_")));
 
         QList<QByteArray> types;
         for (int i = 1; i < 7; i++) {
@@ -366,6 +371,8 @@ private:
 
     QByteArray lastTimestamp;
     QByteArray lastDistance;
+    QByteArray lastMK5Dist;
+    QByteArray lastSpeedDist;
     CombinedMessageGenerator generator;
 
     //fields
